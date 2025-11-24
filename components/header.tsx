@@ -14,7 +14,7 @@ export default function Header() {
 
         <Button className="cursor-pointer" variant="outline">
           <UsersIcon className="w-4 h-4" />
-          <span className="text-sm">User name</span>
+          <span className="text-sm">Switch user</span>
         </Button>
         
       </div>

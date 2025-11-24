@@ -1,5 +1,4 @@
 import AvailabilityGrid from "./availability-grid";
-import FixedAppointments from "./appointments/fixed";
 import AppointmentsForm from "./appointments/form";
 import AppointmentsList from "./appointments/list";
 
@@ -11,12 +10,12 @@ export default function Dashboard() {
                 <p className="text-gray-600 text-sm">Compila gli impegni per verificare le disponibilità</p>
             </div>
 
-            <div className="grid grid-cols-12 gap-2">
+            <div className="grid grid-cols-12 gap-4">
                 <div className="col-span-12 md:col-span-5">
                     <AppointmentsForm />
                 </div>
 
-                <div className="col-span-12 md:col-span-7">
+                <div className="col-span-12 md:col-span-7 flex flex-col gap-4">
                     <AvailabilityGrid />
                     <AppointmentsList />
                 </div>
