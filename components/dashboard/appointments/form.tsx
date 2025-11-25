@@ -14,13 +14,15 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from "lucide-react";
-import { useAppointments } from "@/hooks";
+import { useAppointments, useI18n } from "@/hooks";
 import { buildAppointmentFormData } from "@/features/appointments";
 import { AppointmentCategory, DayId } from "@/types";
 
 // Form used to create a new appointment and push it into the shared context.
 export default function AppointmentsForm() {
-  const { addAppointment } = useAppointments();
+  const { addAppointment, isLoading, isSaving } = useAppointments();
+  const { t } = useI18n();
+  const isBusy = isLoading || isSaving;
   const [isOpen, setIsOpen] = useState(false);
 
   // Handle responsive behavior for opening/closing the form
@@ -83,7 +85,7 @@ export default function AppointmentsForm() {
       >
         <div className="flex items-center gap-2">
           <h2 className="text-base font-medium tracking-tight text-foreground">
-            Crea impegno
+            {t("form.title")}
           </h2>
         </div>
         <Button
@@ -110,7 +112,7 @@ export default function AppointmentsForm() {
               onClick={() => setSelectedCategory("other")}
             >
               <CalendarIcon className="w-3.5 h-3.5" />
-              Altro
+              {t("form.categoryOther")}
             </Button>
             <Button
               className="flex-1 gap-2 cursor-pointer rounded-none border-none shadow-none h-9 text-sm"
@@ -118,7 +120,7 @@ export default function AppointmentsForm() {
               onClick={() => setSelectedCategory("sleep")}
             >
               <MoonIcon className="w-3.5 h-3.5" />
-              Sonno
+              {t("form.categorySleep")}
             </Button>
           </ButtonGroup>
 
@@ -129,7 +131,7 @@ export default function AppointmentsForm() {
                 htmlFor="start-time"
                 className="text-muted-foreground text-xs font-medium uppercase"
               >
-                Inizio
+                {t("form.startLabel")}
               </Label>
               <Input
                 id="start-time"
@@ -137,6 +139,10 @@ export default function AppointmentsForm() {
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
                 className="w-full bg-transparent border-border rounded-none h-10 text-sm"
+                lang="it-IT"
+                min="00:00"
+                max="23:59"
+                step="60"
               />
             </div>
 
@@ -145,7 +151,7 @@ export default function AppointmentsForm() {
                 htmlFor="end-time"
                 className="text-muted-foreground text-xs font-medium uppercase"
               >
-                Fine
+                {t("form.endLabel")}
               </Label>
               <Input
                 id="end-time"
@@ -153,6 +159,10 @@ export default function AppointmentsForm() {
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
                 className="w-full bg-transparent border-border rounded-none h-10 text-sm"
+                lang="it-IT"
+                min="00:00"
+                max="23:59"
+                step="60"
               />
             </div>
           </div>
@@ -164,12 +174,12 @@ export default function AppointmentsForm() {
                 htmlFor="description"
                 className="text-muted-foreground text-xs font-medium uppercase"
               >
-                Descrizione
+                {t("form.descriptionLabel")}
               </Label>
               <Input
                 id="description"
                 type="text"
-                placeholder="Impegno, sonno, lavoro..."
+                placeholder={t("form.descriptionPlaceholder")}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="bg-transparent border-border rounded-none h-10 text-sm"
@@ -184,7 +194,7 @@ export default function AppointmentsForm() {
                 htmlFor="repeat-appointment"
                 className="cursor-pointer text-muted-foreground text-xs font-medium uppercase"
               >
-                Ripeti
+                {t("form.repeatLabel")}
               </Label>
               <Switch
                 className="cursor-pointer rounded-full data-[state=checked]:bg-foreground scale-90 origin-right"
@@ -217,11 +227,14 @@ export default function AppointmentsForm() {
 
           {/* Action button that notifies the parent context */}
           <Button
-            className="w-full cursor-pointer font-medium tracking-wide h-10 rounded-none text-sm mt-1"
+            className="w-full cursor-pointer font-medium tracking-wide h-10 rounded-none text-sm mt-1 disabled:opacity-60"
             variant="default"
             onClick={handleAddAppointment}
+            disabled={isBusy}
+            aria-busy={isBusy}
           >
-            <PlusIcon className="w-3.5 h-3.5 mr-2" /> Aggiungi
+            <PlusIcon className="w-3.5 h-3.5 mr-2" />{" "}
+            {isBusy ? t("form.addButtonSyncing") : t("form.addButtonDefault")}
           </Button>
         </div>
       )}

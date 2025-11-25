@@ -61,3 +61,12 @@ export function formatRepeatLabel(
   return `Ripete: ${labels.join(", ")}`;
 }
 
+// Profile of a dashboard user that can be selected from the header.
+export type UserProfile = {
+  // Stable numeric identifier shared with the appointments storage.
+  id: number;
+  // Human friendly name rendered in the UI.
+  name: string;
+};
+
+

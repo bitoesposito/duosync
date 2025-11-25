@@ -1,10 +1,6 @@
-import dayjs from "dayjs";
-import customParseFormat from "dayjs/plugin/customParseFormat";
+import dayjs, { TWENTY_FOUR_HOUR_FORMAT as HOUR_FORMAT } from "@/lib/time/dayjs";
 import { Appointment, AppointmentCategory } from "@/types";
 
-dayjs.extend(customParseFormat);
-
-const HOUR_FORMAT = "HH:mm";
 const DAY_START = "00:00";
 const DAY_END = "24:00";
 

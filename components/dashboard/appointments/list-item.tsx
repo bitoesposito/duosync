@@ -5,24 +5,29 @@ import {
   APPOINTMENT_CATEGORY_LABEL,
   formatRepeatLabel,
 } from "@/types";
+import { useI18n } from "@/hooks";
 
 type AppointmentsListItemProps = {
   // Single appointment to display in the list
   appointment: Appointment;
   // Callback to remove the current appointment
   onRemove?: () => void;
+  // Whether destructive actions are temporarily disabled
+  disabled?: boolean;
 };
 
 // List item that renders a single appointment with formatted meta data.
 export default function AppointmentsListItem({
   appointment,
   onRemove,
+  disabled = false,
 }: AppointmentsListItemProps) {
   const { startTime, endTime, category, description, isRepeating, repeatDays } =
     appointment;
 
   // Human-friendly label for the category (centralized in types)
   const categoryLabel = APPOINTMENT_CATEGORY_LABEL[category];
+  const { t } = useI18n();
 
   // Repeat description, if available
   const repeatLabel = formatRepeatLabel(isRepeating, repeatDays);
@@ -69,9 +74,10 @@ export default function AppointmentsListItem({
           type="button"
           size="icon"
           variant="ghost"
-          aria-label="Elimina impegno"
-          className="text-muted-foreground hover:text-destructive hover:bg-transparent rounded-none h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 cursor-pointer"
+          aria-label={t("list.removeAriaLabel")}
+          className="text-muted-foreground hover:text-destructive hover:bg-transparent rounded-none h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 cursor-pointer disabled:opacity-50"
           onClick={onRemove}
+          disabled={disabled}
         >
           <TrashIcon className="w-3.5 h-3.5" />
         </Button>

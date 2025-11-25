@@ -1,11 +1,14 @@
 import Header from "@/components/header";
 import Dashboard from "@/components/dashboard";
+import { UsersProvider } from "@/features/users";
 
 export default function Home() {
   return (
-   <div className="min-h-screen">
-    <Header />
-    <Dashboard />
-   </div>
+   <UsersProvider>
+    <div className="min-h-screen">
+      <Header />
+      <Dashboard />
+    </div>
+   </UsersProvider>
   );
 }

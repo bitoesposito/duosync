@@ -1,0 +1,76 @@
+{
+  "header": {
+    "appName": "DuoSync",
+    "switchUser": "Cambia utente",
+    "availableUsers": "Utenti disponibili",
+    "language": "Lingua",
+    "languageItalian": "Italiano",
+    "languageEnglish": "Inglese",
+    "selectUserFallback": "Seleziona utente",
+    "selectLanguageFallback": "Lingua"
+  },
+  "dashboard": {
+    "greeting": "Ciao, {{name}} 👋",
+    "greetingFallback": "ospite",
+    "subtitle": "Compila gli impegni per verificare le disponibilità"
+  },
+  "form": {
+    "title": "Crea impegno",
+    "categoryOther": "Altro",
+    "categorySleep": "Sonno",
+    "startLabel": "Inizio",
+    "endLabel": "Fine",
+    "descriptionLabel": "Descrizione",
+    "descriptionPlaceholder": "Impegno, sonno, lavoro...",
+    "repeatLabel": "Ripeti",
+    "addButtonDefault": "Aggiungi",
+    "addButtonSyncing": "Sincronizzazione..."
+  },
+  "list": {
+    "title": "Lista impegni",
+    "confirm": "Conferma",
+    "confirmTooltip": "Invia una richiesta all'altro utente per confermare gli impegni",
+    "empty": "Nessun impegno aggiunto.",
+    "loading": "Caricamento impegni in corso...",
+    "removeAriaLabel": "Elimina impegno"
+  },
+  "availability": {
+    "title": "Disponibilità",
+    "legendMatch": "Match!",
+    "legendBusy": "Occupato",
+    "legendSleep": "Sonno",
+    "loading": "Caricamento disponibilità..."
+  },
+  "toasts": {
+    "loadError": {
+      "title": "Errore nel caricare gli impegni",
+      "description": "Riprova tra qualche secondo."
+    },
+    "selectUser": {
+      "title": "Seleziona prima un utente",
+      "description": "Gli impegni sono legati al profilo attivo."
+    },
+    "invalidSlot": {
+      "title": "Impegno non valido",
+      "descriptionInvalidFormat": "Orario non valido. Usa il formato 24h (es. 08:30).",
+      "descriptionEndBeforeStart": "L'orario di fine deve essere successivo all'inizio.",
+      "descriptionOverlap": "Questo intervallo si sovrappone a un impegno esistente."
+    },
+    "saveSuccess": {
+      "title": "Impegno salvato",
+      "description": "{{start}} - {{end}}"
+    },
+    "saveError": {
+      "title": "Salvataggio non riuscito",
+      "description": "Controlla la connessione e riprova."
+    },
+    "deleteSuccess": {
+      "title": "Impegno eliminato"
+    },
+    "deleteError": {
+      "title": "Eliminazione non riuscita",
+      "description": "Abbiamo ripristinato l'impegno."
+    }
+  }
+}
+

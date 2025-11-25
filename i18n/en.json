@@ -1,0 +1,76 @@
+{
+  "header": {
+    "appName": "DuoSync",
+    "switchUser": "Switch user",
+    "availableUsers": "Available users",
+    "language": "Language",
+    "languageItalian": "Italian",
+    "languageEnglish": "English",
+    "selectUserFallback": "Select user",
+    "selectLanguageFallback": "Language"
+  },
+  "dashboard": {
+    "greeting": "Hi, {{name}} 👋",
+    "greetingFallback": "friend",
+    "subtitle": "Fill your appointments to check availability"
+  },
+  "form": {
+    "title": "Create appointment",
+    "categoryOther": "Other",
+    "categorySleep": "Sleep",
+    "startLabel": "Start",
+    "endLabel": "End",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Meeting, sleep, work...",
+    "repeatLabel": "Repeat",
+    "addButtonDefault": "Add",
+    "addButtonSyncing": "Syncing..."
+  },
+  "list": {
+    "title": "Appointments",
+    "confirm": "Confirm",
+    "confirmTooltip": "Send a request to the other user to approve these slots",
+    "empty": "No appointments yet.",
+    "loading": "Loading appointments...",
+    "removeAriaLabel": "Remove appointment"
+  },
+  "availability": {
+    "title": "Availability",
+    "legendMatch": "Match!",
+    "legendBusy": "Busy",
+    "legendSleep": "Sleep",
+    "loading": "Loading availability..."
+  },
+  "toasts": {
+    "loadError": {
+      "title": "Unable to load appointments",
+      "description": "Please retry in a few seconds."
+    },
+    "selectUser": {
+      "title": "Select a user first",
+      "description": "Appointments are tied to the active profile."
+    },
+    "invalidSlot": {
+      "title": "Invalid appointment",
+      "descriptionInvalidFormat": "Invalid time. Use the 24h format (e.g. 08:30).",
+      "descriptionEndBeforeStart": "End time must be later than the start.",
+      "descriptionOverlap": "This interval overlaps with an existing appointment."
+    },
+    "saveSuccess": {
+      "title": "Appointment saved",
+      "description": "{{start}} - {{end}}"
+    },
+    "saveError": {
+      "title": "Unable to save",
+      "description": "Check your connection and retry."
+    },
+    "deleteSuccess": {
+      "title": "Appointment removed"
+    },
+    "deleteError": {
+      "title": "Unable to remove appointment",
+      "description": "We restored the previous data."
+    }
+  }
+}
+
