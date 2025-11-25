@@ -6,5 +6,3 @@ import { useUsersContext } from "@/features/users";
 export function useUsers() {
   return useUsersContext();
 }
-
-

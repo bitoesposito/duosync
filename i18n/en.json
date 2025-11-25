@@ -10,7 +10,7 @@
     "selectLanguageFallback": "Language"
   },
   "dashboard": {
-    "greeting": "Hi, {{name}} 👋",
+    "greeting": "Hi, {{name}}",
     "greetingFallback": "friend",
     "subtitle": "Fill your appointments to check availability"
   },
@@ -24,7 +24,8 @@
     "descriptionPlaceholder": "Meeting, sleep, work...",
     "repeatLabel": "Repeat",
     "addButtonDefault": "Add",
-    "addButtonSyncing": "Syncing..."
+    "addButtonSyncing": "Syncing...",
+    "userRequired": "Select a user from the navbar to create an appointment"
   },
   "list": {
     "title": "Appointments",

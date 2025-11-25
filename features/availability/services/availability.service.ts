@@ -91,5 +91,3 @@ export function buildTimelineSegments(
 
   return segments.filter((segment) => segment.width > 0);
 }
-
-

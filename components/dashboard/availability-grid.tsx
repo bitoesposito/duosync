@@ -11,6 +11,7 @@ import {
   type TimelineSegmentCategory,
 } from "@/features/availability";
 import { useAppointments, useI18n } from "@/hooks";
+import AvailabilityGridSkeleton from "./availability-grid-skeleton";
 
 const segmentColorMap: Record<TimelineSegmentCategory, string> = {
   available: "bg-emerald-400 dark:bg-emerald-600",
@@ -49,13 +50,11 @@ export default function AvailabilityGrid() {
 
       <TooltipProvider>
         <div className="relative w-full">
-          <div className="relative w-full h-12 border border-border bg-muted/10">
-            {isLoading ? (
-              <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground animate-pulse">
-                {t("availability.loading")}
-              </div>
-            ) : (
-              segments.map((segment) => (
+          {isLoading ? (
+            <AvailabilityGridSkeleton />
+          ) : (
+            <div className="relative w-full h-12 border border-border bg-muted/10">
+              {segments.map((segment) => (
                 <Tooltip key={segment.id}>
                   <TooltipTrigger asChild>
                     <div
@@ -73,9 +72,9 @@ export default function AvailabilityGrid() {
                     </p>
                   </TooltipContent>
                 </Tooltip>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </TooltipProvider>
     </section>

@@ -106,6 +106,3 @@ export function validateAppointmentSlot(
 
   return { ok: true };
 }
-
-
-

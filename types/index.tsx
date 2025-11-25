@@ -68,5 +68,3 @@ export type UserProfile = {
   // Human friendly name rendered in the UI.
   name: string;
 };
-
-

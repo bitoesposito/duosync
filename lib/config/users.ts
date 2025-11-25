@@ -15,5 +15,3 @@ export const USER_DIRECTORY: UserProfile[] = [
 export function getUserDirectory(): UserProfile[] {
   return USER_DIRECTORY;
 }
-
-

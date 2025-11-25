@@ -19,10 +19,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useUsers, useI18n } from "@/hooks";
 import { SUPPORTED_LOCALES, type Locale } from "@/i18n";
+import HeaderUserSkeleton from "./header-user-skeleton";
 
 export default function Header() {
   const { theme, setTheme } = useTheme();
-  const { users, activeUser, selectUser } = useUsers();
+  const { users, activeUser, selectUser, isLoading } = useUsers();
   const { locale, setLocale, t } = useI18n();
 
   const toggleTheme = () => {
@@ -54,7 +55,6 @@ export default function Header() {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                size="sm"
                 className="cursor-pointer rounded-none font-medium"
               >
                 <GlobeIcon className="w-4 h-4 mr-2" />
@@ -86,40 +86,44 @@ export default function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                className="cursor-pointer rounded-none font-medium"
-                variant="outline"
-              >
-                <UsersIcon className="w-4 h-4 mr-2" />
-                <span className="text-sm">
-                  {activeUser?.name ?? t("header.selectUserFallback")}
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[14rem]">
-              <DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
-                {t("header.availableUsers")}
-              </DropdownMenuLabel>
-              {users.map((user) => (
-                <DropdownMenuItem
-                  key={user.id}
-                  onClick={() => selectUser(user.id)}
-                  className="flex items-start justify-between"
+          {isLoading ? (
+            <HeaderUserSkeleton />
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  className="cursor-pointer rounded-none font-medium"
+                  variant="outline"
                 >
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium">
-                      {user.name}
-                    </span>
-                  </div>
-                  {user.id === activeUser?.id ? (
-                    <CheckIcon className="w-4 h-4 text-primary" />
-                  ) : null}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <UsersIcon className="w-4 h-4 mr-2" />
+                  <span className="text-sm">
+                    {activeUser?.name ?? t("header.selectUserFallback")}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[14rem]">
+                <DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t("header.availableUsers")}
+                </DropdownMenuLabel>
+                {users.map((user) => (
+                  <DropdownMenuItem
+                    key={user.id}
+                    onClick={() => selectUser(user.id)}
+                    className="flex items-start justify-between"
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">
+                        {user.name}
+                      </span>
+                    </div>
+                    {user.id === activeUser?.id ? (
+                      <CheckIcon className="w-4 h-4 text-primary" />
+                    ) : null}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
     </header>
   );

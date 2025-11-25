@@ -10,7 +10,7 @@
     "selectLanguageFallback": "Lingua"
   },
   "dashboard": {
-    "greeting": "Ciao, {{name}} 👋",
+    "greeting": "Ciao, {{name}}",
     "greetingFallback": "ospite",
     "subtitle": "Compila gli impegni per verificare le disponibilità"
   },
@@ -24,7 +24,8 @@
     "descriptionPlaceholder": "Impegno, sonno, lavoro...",
     "repeatLabel": "Ripeti",
     "addButtonDefault": "Aggiungi",
-    "addButtonSyncing": "Sincronizzazione..."
+    "addButtonSyncing": "Sincronizzazione...",
+    "userRequired": "Seleziona un utente dalla navbar per creare un impegno"
   },
   "list": {
     "title": "Lista impegni",

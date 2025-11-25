@@ -246,5 +246,3 @@ export function useAppointmentsContext() {
 
   return ctx;
 }
-
-

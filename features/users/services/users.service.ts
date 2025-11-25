@@ -15,5 +15,3 @@ export function findUserById(id: number | undefined): UserProfile | undefined {
   if (typeof id === "undefined") return undefined;
   return listUsers().find((user) => user.id === id);
 }
-
-

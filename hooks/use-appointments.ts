@@ -7,5 +7,3 @@ import { useAppointmentsContext } from "@/features/appointments/appointments-con
 export function useAppointments() {
   return useAppointmentsContext();
 }
-
-

@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/tooltip";
 import { ClockIcon, CheckIcon } from "lucide-react";
 import AppointmentsListItem from "./list-item";
+import AppointmentsListSkeleton from "./list-skeleton";
 import { useAppointments, useI18n } from "@/hooks";
 
 // Appointment list that consumes the context directly without parent props.
@@ -46,11 +47,7 @@ export default function AppointmentsList() {
       </header>
 
       {isLoading ? (
-        <div className="py-12 border border-dashed border-border bg-muted/5 text-center animate-pulse">
-          <p className="text-sm text-muted-foreground">
-            {t("list.loading")}
-          </p>
-        </div>
+        <AppointmentsListSkeleton />
       ) : !hasAppointments ? (
         <div className="py-12 border border-dashed border-border bg-muted/5 text-center">
           <p className="text-sm text-muted-foreground">

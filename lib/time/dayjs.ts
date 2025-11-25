@@ -19,5 +19,3 @@ export function formatTimeTo24h(value: string) {
 }
 
 export default dayjs;
-
-

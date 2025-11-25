@@ -10,7 +10,6 @@ import {
   type ReactNode,
 } from "react";
 import { UserProfile } from "@/types";
-import { findUserById, listUsers } from "./services/users.service";
 
 const ACTIVE_USER_STORAGE_KEY = "duosync.activeUserId";
 
@@ -18,13 +17,14 @@ export type UsersContextValue = {
   users: UserProfile[];
   activeUser?: UserProfile;
   selectUser: (userId: number) => void;
+  isLoading: boolean;
 };
 
 const UsersContext = createContext<UsersContextValue | undefined>(undefined);
 
 /**
- * Provides the list of configured users and the currently selected one.
- * The selection is persisted in localStorage to emulate a lightweight DB.
+ * Provides the list of users from the database and the currently selected one.
+ * The selection is persisted in localStorage.
  */
 const parseStoredUserId = (rawId: string | null): number | undefined => {
   if (!rawId) return undefined;
@@ -33,14 +33,42 @@ const parseStoredUserId = (rawId: string | null): number | undefined => {
 };
 
 export function UsersProvider({ children }: { children: ReactNode }) {
-  const users = useMemo(() => listUsers(), []);
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeUserId, setActiveUserId] = useState<number | undefined>(() => {
-    if (typeof window === "undefined") return users[0]?.id;
-    const storedId = window.localStorage.getItem(ACTIVE_USER_STORAGE_KEY);
-    const parsed = parseStoredUserId(storedId);
-    return findUserById(parsed)?.id ?? users[0]?.id;
+    if (typeof window === "undefined") return undefined;
+    return parseStoredUserId(window.localStorage.getItem(ACTIVE_USER_STORAGE_KEY));
   });
 
+  // Load users from database on mount
+  useEffect(() => {
+    async function loadUsers() {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/users");
+        if (!response.ok) {
+          console.error("Failed to load users");
+          return;
+        }
+        const data = await response.json();
+        setUsers(data.users || []);
+
+        // If no active user is set and we have users, select the first one
+        if (!activeUserId && data.users?.length > 0) {
+          const firstUserId = data.users[0].id;
+          setActiveUserId(firstUserId);
+        }
+      } catch (error) {
+        console.error("Error loading users:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadUsers();
+  }, []);
+
+  // Persist active user selection
   useEffect(() => {
     if (!activeUserId || typeof window === "undefined") return;
     window.localStorage.setItem(ACTIVE_USER_STORAGE_KEY, String(activeUserId));
@@ -48,14 +76,15 @@ export function UsersProvider({ children }: { children: ReactNode }) {
 
   const selectUser = useCallback(
     (userId: number) => {
-      if (!findUserById(userId)) return;
+      const userExists = users.some((u) => u.id === userId);
+      if (!userExists) return;
       setActiveUserId(userId);
     },
-    [setActiveUserId]
+    [users]
   );
 
   const activeUser = useMemo(
-    () => findUserById(activeUserId) ?? users[0],
+    () => users.find((u) => u.id === activeUserId),
     [activeUserId, users]
   );
 
@@ -64,8 +93,9 @@ export function UsersProvider({ children }: { children: ReactNode }) {
       users,
       activeUser,
       selectUser,
+      isLoading,
     }),
-    [users, activeUser, selectUser]
+    [users, activeUser, selectUser, isLoading]
   );
 
   return <UsersContext.Provider value={value}>{children}</UsersContext.Provider>;
@@ -78,5 +108,3 @@ export function useUsersContext() {
   }
   return ctx;
 }
-
-

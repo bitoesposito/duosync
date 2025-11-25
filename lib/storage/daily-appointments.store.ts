@@ -109,5 +109,3 @@ export async function removeDailyAppointment(
   await writeStore(store);
   return bucket.appointments;
 }
-
-
