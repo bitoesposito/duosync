@@ -1,0 +1,86 @@
+---
+alwaysApply: true
+---
+
+These rules describe how I want apps to be structured.
+
+---
+
+### 1. Base folder structure
+
+- **`app/`**  
+  - Only Next.js entrypoints (routes, layouts).  
+  - No heavy business logic: this layer only composes layouts and main sections.
+
+- **`components/`**  
+  - **`components/ui/`**: reusable design system (button, input, dialog, tooltip, etc.).  
+  - **`components/layout/`**: header, footer, layout wrappers.  
+  - **Other page‑specific subfolders** (e.g. `dashboard/`): presentation components only, no heavy domain logic.
+
+- **`features/`**  
+  - Each domain has its own folder (e.g. `features/appointments`, `features/timers`, etc.).  
+  - Inside each feature:
+    - `index.ts`: *barrel export* for the public API of the feature.  
+    - `services/*.service.ts`: **pure** business functions (create/update/delete, calculations, data mapping).  
+    - Optional: feature‑specific context/store files (`*context.tsx`) when the state is local to that feature.
+
+- **`hooks/`**  
+  - Only reusable app‑level hooks or hooks that orchestrate multiple features (`useAppointments`, `useDashboardLayout`, `useI18n`, …).  
+  - `hooks/index.ts` as the main barrel export.
+
+- **`lib/`**  
+  - Generic utilities and cross‑cutting services (e.g. `lib/utils`, `lib/storage/persistence.service.ts`, `lib/time`, etc.).  
+  - No direct dependency on components; they can depend on `@/types` and, if needed, on `@/features`.
+
+- **`types/`**  
+  - All global domain types (`Appointment`, `User`, `Section`, etc.) and formatting helpers/constants (`DAY_LABELS`, `formatRepeatLabel`, …).  
+  - Exported from `types/index.tsx` and always imported as:
+    - `import { Appointment, AppointmentFormData } from "@/types";`
+
+- **`store/`** (if present)  
+  - Global state (e.g. Zustand, Redux, etc.).  
+  - Components **do not** read from the store directly: they use hooks from `hooks/`.
+
+- **`i18n/`**  
+  - Translation files (`en.json`, `it.json`, …) and i18n helpers.
+
+---
+
+### 2. Rules for logic vs presentation
+
+- **React components (`components/*`)**  
+  - Should be as *presentational* as possible: they receive prepared data (via props or hooks) and render it.  
+  - No heavy business logic (complex calculations, domain transformations, storage access).
+
+- **Domain functions (`features/*/services`)**  
+  - Contain only pure functional logic (input → output), with no UI side effects.  
+  - Can use utilities from `lib/` and types from `@/types`.  
+  - No JSX here.
+
+- **Context and state**  
+  - Every piece of “domain” state (e.g. appointments) lives in a dedicated context/hook in `features/` or `hooks/`.  
+  - Components only use hooks (`useAppointments`, etc.) to read/write that state.
+
+---
+
+### 3. Rules for imports and aliases
+
+- Always use the aliases defined in `tsconfig.json`:
+  - `@/types` for global types.  
+  - `@/features/...` for feature services.  
+  - `@/hooks` for shared hooks.  
+  - `@/lib/...` for utilities and services.  
+  - `@/components/...` for shared components.
+- Avoid deep relative paths like `../../../types/types`. If a global type is needed, it must come from `@/types`.
+
+---
+
+### 4. Code style
+
+- Code must be **well‑commented and readable** in English, with clear context:
+  - Short comments above functions, contexts, custom hooks and services, explaining *what* they do and *how* they interact with other pieces.  
+- Prefer small, pure functions in `services` and simple components that consume those functions.  
+- Avoid mixing in the same file:
+  - domain calculations,
+  - global state management,
+  - and JSX rendering, when they can be separated.

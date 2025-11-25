@@ -1,153 +1,75 @@
 "use client";
 
-import dayjs from "dayjs";
-import customParseFormat from "dayjs/plugin/customParseFormat";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+import {
+  buildTimelineSegments,
+  type TimelineSegmentCategory,
+} from "@/features/availability";
+import { useAppointments } from "@/hooks";
+import { APPOINTMENT_CATEGORY_LABEL } from "@/types";
 
-dayjs.extend(customParseFormat);
-
-type Appointment = {
-  id: string;
-  startTime: string;
-  endTime: string;
-  category: "sleep" | "work" | "other";
+const segmentColorMap: Record<TimelineSegmentCategory, string> = {
+  available: "bg-emerald-400 dark:bg-emerald-600",
+  sleep: "bg-indigo-200 dark:bg-indigo-900",
+  other: "bg-slate-200 dark:bg-slate-700",
 };
 
-type Segment = {
-  id: string;
-  left: number;
-  width: number;
-  category: "sleep" | "work" | "other" | "available";
-  startTime: string;
-  endTime: string;
-};
+const legendItems: { category: TimelineSegmentCategory; label: string }[] = [
+  { category: "available", label: "Match!" },
+  { category: "other", label: "Occupato" },
+  { category: "sleep", label: APPOINTMENT_CATEGORY_LABEL.sleep },
+];
 
 export default function AvailabilityGrid() {
-  const appointments: Appointment[] = [
-    { id: "1", startTime: "00:00", endTime: "06:00", category: "sleep" },
-    { id: "2", startTime: "06:00", endTime: "14:00", category: "work" }
-  ];
-
-  const dayStart = dayjs("00:00", "HH:mm");
-  const dayEnd = dayjs("24:00", "HH:mm");
-  const dayDuration = dayEnd.diff(dayStart, "minute");
-
-  const timeToPercent = (time: string) => {
-    return (dayjs(time, "HH:mm").diff(dayStart, "minute") / dayDuration) * 100;
-  };
-
-  const getColor = (category: string) => {
-    const colors = {
-      sleep: "bg-indigo-200",
-      work: "bg-slate-300",
-      other: "bg-slate-200",
-      available: "bg-emerald-400",
-    };
-    return colors[category as keyof typeof colors] || "bg-emerald-400";
-  };
-
-  // Genera tutti i segmenti (impegni + disponibili)
-  const generateAllSegments = (): Segment[] => {
-    const sorted = [...appointments].sort((a, b) =>
-      dayjs(a.startTime, "HH:mm").diff(dayjs(b.startTime, "HH:mm"))
-    );
-
-    const allSegments: Segment[] = [];
-    let currentTime = dayStart;
-
-    sorted.forEach((apt) => {
-      const aptStart = dayjs(apt.startTime, "HH:mm");
-      const aptEnd = dayjs(apt.endTime, "HH:mm");
-
-      // Aggiungi segmento disponibile se c'è spazio prima
-      if (aptStart.isAfter(currentTime)) {
-        allSegments.push({
-          id: `available-${currentTime.format("HH:mm")}`,
-          left: timeToPercent(currentTime.format("HH:mm")),
-          width: timeToPercent(apt.startTime) - timeToPercent(currentTime.format("HH:mm")),
-          category: "available",
-          startTime: currentTime.format("HH:mm"),
-          endTime: apt.startTime,
-        });
-      }
-
-      // Aggiungi segmento impegno
-      allSegments.push({
-        id: apt.id,
-        left: timeToPercent(apt.startTime),
-        width: timeToPercent(apt.endTime) - timeToPercent(apt.startTime),
-        category: apt.category,
-        startTime: apt.startTime,
-        endTime: apt.endTime,
-      });
-
-      currentTime = aptEnd;
-    });
-
-    // Aggiungi segmento disponibile finale se necessario
-    if (currentTime.isBefore(dayEnd)) {
-      allSegments.push({
-        id: `available-${currentTime.format("HH:mm")}`,
-        left: timeToPercent(currentTime.format("HH:mm")),
-        width: timeToPercent("24:00") - timeToPercent(currentTime.format("HH:mm")),
-        category: "available",
-        startTime: currentTime.format("HH:mm"),
-        endTime: "24:00",
-      });
-    }
-
-    return allSegments;
-  };
-
-  const segments = generateAllSegments();
+  const { appointments } = useAppointments();
+  const segments = buildTimelineSegments(appointments);
 
   return (
-    <div className="w-full bg-white flex flex-col gap-2 p-4 border-1 border-gray-200 rounded-lg">
-      <div className="flex flex-col sm:flex-row justify-between gap-2 select-none">
-        <h3 className="text-base font-bold text-slate-800">Timeline Disponibilità</h3>
-        <div className="flex gap-4 text-xs font-medium border border-slate-200 rounded-md">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-200"></span>
-            Match!
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-            Occupato
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-indigo-200"></span>
-            Sonno
-          </div>
-        </div>
-      </div>
+    <section className="w-full flex flex-col gap-6  border-b border-border">
+      <header className="flex flex-col sm:flex-row justify-between gap-4 select-none">
+        <h3 className="text-lg font-medium tracking-tight">Disponibilità</h3>
+        <ul className="flex gap-6 text-xs font-medium text-muted-foreground">
+          {legendItems.map((item) => (
+            <li key={item.category} className="flex items-center gap-2">
+              <span
+                className={`w-3 h-3 ${segmentColorMap[item.category]}`}
+              ></span>
+              {item.label}
+            </li>
+          ))}
+        </ul>
+      </header>
 
       <TooltipProvider>
-        <div className="relative w-full py-2">
-          <div className="relative w-full h-4 rounded-md overflow-hidden">
-            {segments
-              .filter((segment) => segment.width > 0)
-              .map((segment) => (
-                <Tooltip key={segment.id}>
-                  <TooltipTrigger asChild>
-                    <div
-                      className={`absolute h-full ${getColor(segment.category)} transition-all hover:opacity-90 cursor-pointer`}
-                      style={{
-                        left: `${segment.left}%`,
-                        width: `${segment.width}%`,
-                        minWidth: "2px",
-                      }}
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="font-medium">
-                      {segment.startTime} - {segment.endTime}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              ))}
+        <div className="relative w-full">
+          <div className="relative w-full h-12 border border-border bg-muted/10">
+            {segments.map((segment) => (
+              <Tooltip key={segment.id}>
+                <TooltipTrigger asChild>
+                  <div
+                    className={`absolute h-full ${segmentColorMap[segment.category]} transition-opacity hover:opacity-90 cursor-pointer border-r border-background last:border-r-0`}
+                    style={{
+                      left: `${segment.left}%`,
+                      width: `${segment.width}%`,
+                      minWidth: "1px",
+                    }}
+                  />
+                </TooltipTrigger>
+                <TooltipContent className="rounded-none border-border">
+                  <p className="font-medium">
+                    {segment.startTime} - {segment.endTime}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            ))}
           </div>
         </div>
       </TooltipProvider>
-    </div>
+    </section>
   );
 }
