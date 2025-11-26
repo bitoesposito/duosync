@@ -108,7 +108,7 @@ export default function AppointmentsForm() {
   return (
     <section className="w-full flex flex-col gap-0 border-b border-border">
       <header
-        className="flex items-center justify-between py-3 md:cursor-default cursor-pointer hover:opacity-70 md:hover:opacity-100 transition-opacity"
+        className="flex items-center justify-between py-3 md:pt-0 pt-3 md:cursor-default cursor-pointer hover:opacity-70 md:hover:opacity-100 transition-opacity"
         onClick={() => setIsOpen(!isOpen)}
       >
         <h2 className="text-lg font-medium tracking-tight text-foreground">

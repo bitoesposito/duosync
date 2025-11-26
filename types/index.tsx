@@ -140,7 +140,7 @@ export type I18nContextValue = {
 /**
  * Supported locale codes.
  */
-export type Locale = "it" | "en";
+export type Locale = "it" | "en" | "uk";
 
 /**
  * Values for template interpolation in translations.

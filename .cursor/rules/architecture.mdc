@@ -84,3 +84,4 @@ These rules describe how I want apps to be structured.
   - domain calculations,
   - global state management,
   - and JSX rendering, when they can be separated.
+- If the file exceeds 200 lines of codes approx., refacotr it to subdivide into smaller pieces

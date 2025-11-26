@@ -1,0 +1,112 @@
+{
+  "common": {
+    "days": {
+      "1": "Понеділок",
+      "2": "Вівторок",
+      "3": "Середа",
+      "4": "Четвер",
+      "5": "П'ятниця",
+      "6": "Субота",
+      "7": "Неділя"
+    },
+    "categories": {
+      "sleep": "Сон",
+      "other": "Інше"
+    },
+    "repeats": "Повторюється"
+  },
+  "header": {
+    "appName": "DuoSync",
+    "switchUser": "Змінити користувача",
+    "availableUsers": "Доступні користувачі",
+    "language": "Мова",
+    "languageItalian": "Італійська",
+    "languageEnglish": "Англійська",
+    "languageUkrainian": "Українська",
+    "selectUserFallback": "Виберіть користувача",
+    "selectLanguageFallback": "Мова",
+    "theme": "Тема",
+    "themeLight": "Світла",
+    "themeDark": "Темна",
+    "themeSystem": "Системна",
+    "settings": "Налаштування"
+  },
+  "dashboard": {
+    "greeting": "Привіт, {{name}}",
+    "greetingFallback": "друже",
+    "subtitle": "Заповніть зустрічі, щоб перевірити доступність"
+  },
+  "form": {
+    "title": "Створити зустріч",
+    "categoryOther": "Інше",
+    "categorySleep": "Сон",
+    "startLabel": "Початок",
+    "endLabel": "Кінець",
+    "descriptionLabel": "Опис",
+    "descriptionPlaceholder": "Зустріч, сон, робота...",
+    "repeatLabel": "Повторювати",
+    "addButtonDefault": "Додати",
+    "addButtonSyncing": "Синхронізація...",
+    "userRequired": "Виберіть користувача з навігаційної панелі, щоб створити зустріч",
+    "noSlotsAvailable": "Немає доступних слотів",
+    "validation": {
+      "invalidFormat": "Невірний формат часу",
+      "endBeforeStart": "Час закінчення повинен бути пізніше за час початку",
+      "overlap": "Цей інтервал перетинається з існуючою зустріччю",
+      "startTimeHint": "Наступний доступний слот: {{time}}",
+      "endTimeHint": "Мінімальний час: {{time}}"
+    }
+  },
+  "list": {
+    "title": "Список зустрічей",
+    "confirm": "Підтвердити",
+    "confirmTooltip": "Надіслати запит іншому користувачу для підтвердження цих слотів",
+    "empty": "Зустрічі ще не додані.",
+    "loading": "Завантаження зустрічей...",
+    "removeAriaLabel": "Видалити зустріч"
+  },
+  "availability": {
+    "title": "Доступність",
+    "personalTimeline": "Ваша доступність",
+    "sharedTimeline": "Спільна доступність",
+    "legendAvailable": "Доступно",
+    "legendBusy": "Зайнято",
+    "legendSleep": "Сон",
+    "noFreeTime": "Немає спільної доступності",
+    "freeTimeAvailable": "спільної доступності",
+    "freeSlots": "слотів",
+    "loading": "Завантаження доступності..."
+  },
+  "toasts": {
+    "loadError": {
+      "title": "Помилка завантаження зустрічей",
+      "description": "Спробуйте ще раз через кілька секунд."
+    },
+    "selectUser": {
+      "title": "Спочатку виберіть користувача",
+      "description": "Зустрічі прив'язані до активного профілю."
+    },
+    "invalidSlot": {
+      "title": "Невірна зустріч",
+      "descriptionInvalidFormat": "Невірний час. Використовуйте формат 24 години (напр. 08:30).",
+      "descriptionEndBeforeStart": "Час закінчення повинен бути пізніше за час початку.",
+      "descriptionOverlap": "Цей інтервал перетинається з існуючою зустріччю."
+    },
+    "saveSuccess": {
+      "title": "Зустріч збережено",
+      "description": "{{start}} - {{end}}"
+    },
+    "saveError": {
+      "title": "Не вдалося зберегти",
+      "description": "Перевірте з'єднання та спробуйте ще раз."
+    },
+    "deleteSuccess": {
+      "title": "Зустріч видалено"
+    },
+    "deleteError": {
+      "title": "Не вдалося видалити зустріч",
+      "description": "Ми відновили попередні дані."
+    }
+  }
+}
+

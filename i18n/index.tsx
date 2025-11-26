@@ -16,6 +16,7 @@ import {
 } from "@/types";
 import it from "./it.json";
 import en from "./en.json";
+import uk from "./uk.json";
 
 /**
  * Messages map for all supported locales.
@@ -23,6 +24,7 @@ import en from "./en.json";
 const messages = {
   it,
   en,
+  uk,
 } as const;
 
 /**

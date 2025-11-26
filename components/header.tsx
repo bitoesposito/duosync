@@ -85,7 +85,9 @@ export default function Header() {
                     <span className="text-sm font-medium">
                       {code === "it"
                         ? t("header.languageItalian")
-                        : t("header.languageEnglish")}
+                        : code === "en"
+                        ? t("header.languageEnglish")
+                        : t("header.languageUkrainian")}
                     </span>
                     {code === locale && (
                       <CheckIcon className="w-4 h-4 text-primary" />

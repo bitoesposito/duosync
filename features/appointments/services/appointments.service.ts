@@ -8,6 +8,11 @@ import {
   AppointmentFormState,
   AppointmentValidationResult,
 } from "@/types";
+import {
+  wouldOverlap,
+  validateTimeFormat,
+  validateTimeOrder,
+} from "./appointments-time-utils.service";
 
 // ============================================================================
 // BUSINESS LOGIC - Pure functions (no side effects)
@@ -60,43 +65,34 @@ export function createAppointment(
 /**
  * Validates that the appointment times follow 24h format and do not overlap
  * with existing appointments already stored for the user.
+ * Uses unified validation functions from time-utils service.
  */
 export function validateAppointmentSlot(
   data: AppointmentFormData,
   existing: Appointment[]
 ): AppointmentValidationResult {
-  const start = parseTimeStrict(data.startTime);
-  const end = parseTimeStrict(data.endTime);
+  // Validate format
+  const startFormat = validateTimeFormat(data.startTime);
+  const endFormat = validateTimeFormat(data.endTime);
 
-  if (!start.isValid() || !end.isValid()) {
+  if (!startFormat.valid || !endFormat.valid) {
     return {
       ok: false,
       reason: "invalid-format",
     };
   }
 
-  if (!start.isBefore(end)) {
+  // Validate order (end after start)
+  const orderValidation = validateTimeOrder(data.startTime, data.endTime);
+  if (!orderValidation.valid) {
     return {
       ok: false,
       reason: "end-before-start",
     };
   }
 
-  const overlaps = existing.some((appointment) => {
-    const appointmentStart = parseTimeStrict(appointment.startTime);
-    const appointmentEnd = parseTimeStrict(appointment.endTime);
-
-    if (!appointmentStart.isValid() || !appointmentEnd.isValid()) {
-      return false;
-    }
-
-    const startsDuringExisting = start.isBefore(appointmentEnd);
-    const endsAfterExistingStarts = end.isAfter(appointmentStart);
-
-    return startsDuringExisting && endsAfterExistingStarts;
-  });
-
-  if (overlaps) {
+  // Check for overlap using unified function
+  if (wouldOverlap(data.startTime, data.endTime, existing)) {
     return {
       ok: false,
       reason: "overlap",
