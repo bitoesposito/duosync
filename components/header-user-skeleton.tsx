@@ -8,5 +8,3 @@ export default function HeaderUserSkeleton() {
     <Skeleton className="h-9 w-32 rounded-none" />
   );
 }
-
-

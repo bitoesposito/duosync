@@ -9,22 +9,16 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { UserProfile } from "@/types";
+import { UserProfile, UsersContextValue } from "@/types";
+import { fetchUsers } from "./services/users.service";
 
 const ACTIVE_USER_STORAGE_KEY = "duosync.activeUserId";
-
-export type UsersContextValue = {
-  users: UserProfile[];
-  activeUser?: UserProfile;
-  selectUser: (userId: number) => void;
-  isLoading: boolean;
-};
 
 const UsersContext = createContext<UsersContextValue | undefined>(undefined);
 
 /**
- * Provides the list of users from the database and the currently selected one.
- * The selection is persisted in localStorage.
+ * Parses a stored user ID from localStorage.
+ * Returns undefined if the value is invalid or missing.
  */
 const parseStoredUserId = (rawId: string | null): number | undefined => {
   if (!rawId) return undefined;
@@ -32,6 +26,11 @@ const parseStoredUserId = (rawId: string | null): number | undefined => {
   return Number.isFinite(parsed) ? parsed : undefined;
 };
 
+/**
+ * Provider component that manages users state and active user selection.
+ * Fetches users from the API and persists the active user selection in localStorage.
+ * Automatically selects the first user if none is selected.
+ */
 export function UsersProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,28 +44,28 @@ export function UsersProvider({ children }: { children: ReactNode }) {
     async function loadUsers() {
       try {
         setIsLoading(true);
-        const response = await fetch("/api/users");
-        if (!response.ok) {
-          console.error("Failed to load users");
-          return;
-        }
-        const data = await response.json();
-        setUsers(data.users || []);
+        const usersData = await fetchUsers();
+        setUsers(usersData);
 
         // If no active user is set and we have users, select the first one
-        if (!activeUserId && data.users?.length > 0) {
-          const firstUserId = data.users[0].id;
-          setActiveUserId(firstUserId);
-        }
+        // Use functional update to avoid dependency on activeUserId
+        setActiveUserId((currentId) => {
+          if (!currentId && usersData.length > 0) {
+            return usersData[0].id;
+          }
+          return currentId;
+        });
       } catch (error) {
         console.error("Error loading users:", error);
+        setUsers([]);
       } finally {
         setIsLoading(false);
       }
     }
 
     loadUsers();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
   // Persist active user selection
   useEffect(() => {
@@ -101,10 +100,14 @@ export function UsersProvider({ children }: { children: ReactNode }) {
   return <UsersContext.Provider value={value}>{children}</UsersContext.Provider>;
 }
 
+/**
+ * Hook to access the users context.
+ * Exported as useUsers from the feature's public API.
+ */
 export function useUsersContext() {
   const ctx = useContext(UsersContext);
   if (!ctx) {
-    throw new Error("useUsers deve essere usato all'interno di <UsersProvider>");
+    throw new Error("useUsersContext must be used within <UsersProvider>");
   }
   return ctx;
 }

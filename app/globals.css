@@ -127,10 +127,9 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: var(--font-geist-sans), sans-serif;
   }
-}
-
-* {
-  font-family: 'Inter', sans-serif;
-  user-select: none !important;
+  * {
+    user-select: none !important;
+  }
 }

@@ -10,63 +10,33 @@ import {
   type ReactNode,
 } from "react";
 import { toast } from "sonner";
-import { Appointment, AppointmentFormData } from "@/types";
+import {
+  Appointment,
+  AppointmentFormData,
+  AppointmentsContextValue,
+} from "@/types";
 import {
   createAppointment,
   validateAppointmentSlot,
+  fetchAppointments,
+  saveAppointment,
+  removeAppointment as removeAppointmentApi,
 } from "./services/appointments.service";
-import { useUsersContext } from "@/features/users";
-import { useI18nContext } from "@/i18n";
-
-// Value exposed to components that need to read/write appointments.
-export type AppointmentsContextValue = {
-  appointments: Appointment[];
-  addAppointment: (data: AppointmentFormData) => void;
-  removeAppointment: (id: string) => void;
-  isLoading: boolean;
-  isSaving: boolean;
-};
+import { useUsers } from "@/features/users";
+import { useI18n } from "@/i18n";
 
 const AppointmentsContext = createContext<AppointmentsContextValue | undefined>(
   undefined
 );
 
-async function fetchAppointments(userId: number) {
-  const response = await fetch(`/api/appointments?userId=${userId}`, {
-    cache: "no-store",
-  });
-  if (!response.ok) {
-    throw new Error("Impossibile caricare gli impegni");
-  }
-  const payload = (await response.json()) as { appointments: Appointment[] };
-  return payload.appointments;
-}
-
-async function addAppointmentRemote(userId: number, appointment: Appointment) {
-  const response = await fetch(`/api/appointments/add`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, appointment }),
-  });
-  if (!response.ok) {
-    throw new Error("Impossibile salvare l'impegno");
-  }
-}
-
-async function removeAppointmentRemote(userId: number, appointmentId: string) {
-  const response = await fetch(`/api/appointments/remove`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, appointmentId }),
-  });
-  if (!response.ok) {
-    throw new Error("Impossibile eliminare l'impegno");
-  }
-}
-
+/**
+ * Provider component that manages appointments state for the active user.
+ * Handles fetching, creating, and deleting appointments via API services.
+ * The context is keyed by user ID to reset state when switching users.
+ */
 export function AppointmentsProvider({ children }: { children: ReactNode }) {
-  const { activeUser } = useUsersContext();
-  const { t } = useI18nContext();
+  const { activeUser } = useUsers();
+  const { t } = useI18n();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loadedUserId, setLoadedUserId] = useState<number | null>(null);
   const [pendingMutations, setPendingMutations] = useState(0);
@@ -86,8 +56,9 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
           setAppointments(data);
         }
       })
-      .catch(() => {
+      .catch((error) => {
         if (!cancelled) {
+          console.error("Error loading appointments:", error);
           setAppointments([]);
           toast.error(t("toasts.loadError.title"), {
             description: t("toasts.loadError.description"),
@@ -143,7 +114,7 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
       }
 
       setPendingMutations((count) => count + 1);
-      addAppointmentRemote(activeUser.id, appointment)
+      saveAppointment(activeUser.id, appointment)
         .then(() => {
           toast.success(t("toasts.saveSuccess.title"), {
             description: t("toasts.saveSuccess.description", {
@@ -152,8 +123,8 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
             }),
           });
         })
-        .catch((error) => {
-          console.error("Impossibile salvare l'impegno", error);
+        .catch((error: unknown) => {
+          console.error("Failed to save appointment:", error);
           toast.error(t("toasts.saveError.title"), {
             description: t("toasts.saveError.description"),
           });
@@ -189,12 +160,18 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
         return next;
       });
       setPendingMutations((count) => count + 1);
-      removeAppointmentRemote(activeUser.id, id)
+      removeAppointmentApi(activeUser.id, id)
         .then(() => {
           toast.success(t("toasts.deleteSuccess.title"));
+          // Reload appointments from database to ensure consistency
+          // This is especially important for recurring appointments where we only remove a day
+          return fetchAppointments(activeUser.id);
         })
-        .catch((error) => {
-          console.error("Impossibile eliminare l'impegno", error);
+        .then((updatedAppointments) => {
+          setAppointments(updatedAppointments);
+        })
+        .catch((error: unknown) => {
+          console.error("Failed to delete appointment:", error);
           toast.error(t("toasts.deleteError.title"), {
             description: t("toasts.deleteError.description"),
           });
@@ -234,13 +211,16 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Internal hook to access the context. Public components should use useAppointments.
+/**
+ * Hook to access the appointments context.
+ * Exported as useAppointments from the feature's public API.
+ */
 export function useAppointmentsContext() {
   const ctx = useContext(AppointmentsContext);
 
   if (!ctx) {
     throw new Error(
-      "useAppointments deve essere usato all'interno di <AppointmentsProvider>"
+      "useAppointmentsContext must be used within <AppointmentsProvider>"
     );
   }
 

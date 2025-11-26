@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listAppointmentsFromDb } from "@/features/appointments/services/appointments-db.service";
+import { listAppointmentsFromDb } from "@/features/appointments/services/appointments.db.service";
 
 const invalidUserResponse = () =>
   NextResponse.json(

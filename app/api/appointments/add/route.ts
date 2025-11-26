@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAppointmentInDb } from "@/features/appointments/services/appointments-db.service";
+import { createAppointmentInDb } from "@/features/appointments/services/appointments.db.service";
 import { Appointment } from "@/types";
 
 type AddPayload = {

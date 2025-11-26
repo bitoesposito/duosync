@@ -1,11 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { TrashIcon, RepeatIcon } from "lucide-react";
-import {
-  Appointment,
-  APPOINTMENT_CATEGORY_LABEL,
-  formatRepeatLabel,
-} from "@/types";
-import { useI18n } from "@/hooks";
+import { Appointment, DayId } from "@/types";
+import { useI18n } from "@/i18n";
 
 type AppointmentsListItemProps = {
   // Single appointment to display in the list
@@ -25,12 +21,16 @@ export default function AppointmentsListItem({
   const { startTime, endTime, category, description, isRepeating, repeatDays } =
     appointment;
 
-  // Human-friendly label for the category (centralized in types)
-  const categoryLabel = APPOINTMENT_CATEGORY_LABEL[category];
   const { t } = useI18n();
 
-  // Repeat description, if available
-  const repeatLabel = formatRepeatLabel(isRepeating, repeatDays);
+  // Human-friendly label for the category (using i18n)
+  const categoryLabel = t(`common.categories.${category}`);
+
+  // Build repeat label using first letter of translated day names
+  const repeatLabel =
+    isRepeating && repeatDays.length > 0
+      ? repeatDays.map((d: DayId) => t(`common.days.${d}`).slice(0, 3)).join(", ")
+      : null;
 
   const isSleep = category === "sleep";
 
@@ -62,7 +62,7 @@ export default function AppointmentsListItem({
             <div className="flex items-center gap-1 mt-0.5 text-muted-foreground/70">
               <RepeatIcon className="w-3 h-3" />
               <p className="text-[10px] font-medium truncate uppercase tracking-wide">
-                {repeatLabel.replace("Ripete: ", "")}
+                {repeatLabel}
               </p>
             </div>
           )}
@@ -75,7 +75,7 @@ export default function AppointmentsListItem({
           size="icon"
           variant="ghost"
           aria-label={t("list.removeAriaLabel")}
-          className="text-muted-foreground hover:text-destructive hover:bg-transparent rounded-none h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 cursor-pointer disabled:opacity-50"
+          className="text-muted-foreground hover:text-destructive hover:bg-transparent rounded-none h-6 w-6 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0 cursor-pointer disabled:opacity-50"
           onClick={onRemove}
           disabled={disabled}
         >

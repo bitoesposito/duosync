@@ -27,5 +27,3 @@ async function runMigrations() {
 }
 
 runMigrations();
-
-

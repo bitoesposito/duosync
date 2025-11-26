@@ -1,4 +1,20 @@
 {
+  "common": {
+    "days": {
+      "1": "Lunedì",
+      "2": "Martedì",
+      "3": "Mercoledì",
+      "4": "Giovedì",
+      "5": "Venerdì",
+      "6": "Sabato",
+      "7": "Domenica"
+    },
+    "categories": {
+      "sleep": "Sonno",
+      "other": "Altro"
+    },
+    "repeats": "Ripete"
+  },
   "header": {
     "appName": "DuoSync",
     "switchUser": "Cambia utente",
@@ -7,7 +23,12 @@
     "languageItalian": "Italiano",
     "languageEnglish": "Inglese",
     "selectUserFallback": "Seleziona utente",
-    "selectLanguageFallback": "Lingua"
+    "selectLanguageFallback": "Lingua",
+    "theme": "Tema",
+    "themeLight": "Chiaro",
+    "themeDark": "Scuro",
+    "themeSystem": "Sistema",
+    "settings": "Impostazioni"
   },
   "dashboard": {
     "greeting": "Ciao, {{name}}",
@@ -25,7 +46,15 @@
     "repeatLabel": "Ripeti",
     "addButtonDefault": "Aggiungi",
     "addButtonSyncing": "Sincronizzazione...",
-    "userRequired": "Seleziona un utente dalla navbar per creare un impegno"
+    "userRequired": "Seleziona un utente dalla navbar per creare un impegno",
+    "noSlotsAvailable": "Nessuno slot disponibile",
+    "validation": {
+      "invalidFormat": "Formato orario non valido",
+      "endBeforeStart": "L'orario di fine deve essere successivo all'inizio",
+      "overlap": "Questo intervallo si sovrappone a un impegno esistente",
+      "startTimeHint": "Prossimo slot disponibile: {{time}}",
+      "endTimeHint": "Orario minimo: {{time}}"
+    }
   },
   "list": {
     "title": "Lista impegni",
@@ -37,9 +66,14 @@
   },
   "availability": {
     "title": "Disponibilità",
-    "legendMatch": "Match!",
+    "personalTimeline": "La tua disponibilità",
+    "sharedTimeline": "Tempo disponibile condiviso",
+    "legendAvailable": "Disponibile",
     "legendBusy": "Occupato",
     "legendSleep": "Sonno",
+    "noFreeTime": "Nessun tempo disponibile condiviso",
+    "freeTimeAvailable": "di tempo disponibile condiviso",
+    "freeSlots": "slot",
     "loading": "Caricamento disponibilità..."
   },
   "toasts": {

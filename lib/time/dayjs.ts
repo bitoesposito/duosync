@@ -1,19 +1,30 @@
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-import duration from "dayjs/plugin/duration";
-import isBetween from "dayjs/plugin/isBetween";
 
+// Extend dayjs with custom parse format for strict time parsing
 dayjs.extend(customParseFormat);
-dayjs.extend(duration);
-dayjs.extend(isBetween);
 
+/**
+ * 24-hour time format constant (HH:mm).
+ */
 export const TWENTY_FOUR_HOUR_FORMAT = "HH:mm";
 
+/**
+ * Parses a time string in 24-hour format with strict validation.
+ * @param value - Time string in HH:mm format
+ * @returns Dayjs object (may be invalid if format doesn't match)
+ */
 export function parseTimeStrict(value: string) {
   return dayjs(value, TWENTY_FOUR_HOUR_FORMAT, true);
 }
 
-export function formatTimeTo24h(value: string) {
+/**
+ * Formats a time string to 24-hour format (HH:mm).
+ * If the input is invalid, returns it unchanged.
+ * @param value - Time string to format
+ * @returns Formatted time string in HH:mm format
+ */
+export function formatTimeTo24h(value: string): string {
   const parsed = parseTimeStrict(value);
   return parsed.isValid() ? parsed.format(TWENTY_FOUR_HOUR_FORMAT) : value;
 }

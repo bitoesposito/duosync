@@ -1,4 +1,20 @@
 {
+  "common": {
+    "days": {
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday",
+      "7": "Sunday"
+    },
+    "categories": {
+      "sleep": "Sleep",
+      "other": "Other"
+    },
+    "repeats": "Repeats"
+  },
   "header": {
     "appName": "DuoSync",
     "switchUser": "Switch user",
@@ -7,7 +23,12 @@
     "languageItalian": "Italian",
     "languageEnglish": "English",
     "selectUserFallback": "Select user",
-    "selectLanguageFallback": "Language"
+    "selectLanguageFallback": "Language",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "settings": "Settings"
   },
   "dashboard": {
     "greeting": "Hi, {{name}}",
@@ -25,7 +46,15 @@
     "repeatLabel": "Repeat",
     "addButtonDefault": "Add",
     "addButtonSyncing": "Syncing...",
-    "userRequired": "Select a user from the navbar to create an appointment"
+    "userRequired": "Select a user from the navbar to create an appointment",
+    "noSlotsAvailable": "No slots available",
+    "validation": {
+      "invalidFormat": "Invalid time format",
+      "endBeforeStart": "End time must be later than start time",
+      "overlap": "This interval overlaps with an existing appointment",
+      "startTimeHint": "Next available slot: {{time}}",
+      "endTimeHint": "Minimum time: {{time}}"
+    }
   },
   "list": {
     "title": "Appointments",
@@ -37,9 +66,14 @@
   },
   "availability": {
     "title": "Availability",
-    "legendMatch": "Match!",
+    "personalTimeline": "Your availability",
+    "sharedTimeline": "Shared availability",
+    "legendAvailable": "Available",
     "legendBusy": "Busy",
     "legendSleep": "Sleep",
+    "noFreeTime": "No shared availability available",
+    "freeTimeAvailable": "of shared availability",
+    "freeSlots": "slots",
     "loading": "Loading availability..."
   },
   "toasts": {

@@ -1,0 +1,281 @@
+/**
+ * SERVER-SIDE DB - Direct database operations (server-only)
+ * 
+ * This file contains functions that access the database directly.
+ * These functions run ONLY on the server (in API routes) and are never bundled in the client.
+ * 
+ * Flow: API Route → Server DB function → Database
+ * 
+ * IMPORTANT: This file should NEVER be imported in client components.
+ * Only import this file in API routes or other server-side code.
+ */
+
+import { Appointment } from "@/types";
+
+/**
+ * Gets the day of week (1-7, Monday=1) from a date string (YYYY-MM-DD).
+ * JavaScript getDay() returns 0-6 (Sunday=0), we need 1-7 (Monday=1).
+ */
+function getDayOfWeek(dateStr: string): string {
+  const date = new Date(dateStr + "T00:00:00");
+  const day = date.getDay();
+  return day === 0 ? "7" : String(day);
+}
+
+/**
+ * Maps database appointment to domain Appointment type.
+ */
+function mapDbAppointmentToDomain(
+  row: { id: string; startTime: string; endTime: string; category: string; description: string | null }
+): Appointment {
+  return {
+    id: row.id,
+    startTime: row.startTime,
+    endTime: row.endTime,
+    category: row.category as Appointment["category"],
+    description: row.description ?? undefined,
+    isRepeating: false,
+    repeatDays: [],
+  };
+}
+
+/**
+ * Maps recurring appointment to domain Appointment type for a specific date.
+ */
+function mapRecurringAppointmentToDomain(
+  row: {
+    id: string;
+    startTime: string;
+    endTime: string;
+    category: string;
+    description: string | null;
+    repeatDays: string[] | null;
+  },
+  date: string
+): Appointment {
+  return {
+    id: `${row.id}-${date}`,
+    startTime: row.startTime,
+    endTime: row.endTime,
+    category: row.category as Appointment["category"],
+    description: row.description ?? undefined,
+    isRepeating: true,
+    repeatDays: (row.repeatDays ?? []) as Appointment["repeatDays"],
+  };
+}
+
+/**
+ * Fetches all appointments for a specific user and date from the database.
+ * Combines one-time appointments and recurring appointments that match the day of week.
+ * Used exclusively by API routes (server-side only).
+ */
+export async function listAppointmentsFromDb(
+  userId: number,
+  date?: string
+): Promise<Appointment[]> {
+  // Dynamic import to avoid bundling db code in client
+  const { db, schema } = await import("@/lib/db");
+  const { eq, and } = await import("drizzle-orm");
+
+  try {
+    const targetDate = date || new Date().toISOString().split("T")[0];
+    const dayOfWeek = getDayOfWeek(targetDate);
+
+    // Fetch one-time appointments for this date
+    const oneTimeAppointments = await db
+      .select()
+      .from(schema.appointments)
+      .where(
+        and(
+          eq(schema.appointments.userId, userId),
+          eq(schema.appointments.date, targetDate)
+        )
+      );
+
+    // Fetch recurring appointments that match this day of week
+    const recurringAppointments = await db
+      .select()
+      .from(schema.recurringAppointments)
+      .where(eq(schema.recurringAppointments.userId, userId));
+
+    // Filter in JavaScript to check if dayOfWeek is in repeatDays array
+    const matchingRecurring = recurringAppointments.filter((row) =>
+      row.repeatDays?.includes(dayOfWeek)
+    );
+
+    // Map to domain types
+    const oneTime = oneTimeAppointments.map(mapDbAppointmentToDomain);
+    const recurring = matchingRecurring.map((row) =>
+      mapRecurringAppointmentToDomain(row, targetDate)
+    );
+
+    return [...oneTime, ...recurring];
+  } catch (error) {
+    console.error("Error fetching appointments from database:", error);
+    return [];
+  }
+}
+
+/**
+ * Creates a new appointment in the database.
+ * If isRepeating is true, saves to recurring_appointments table.
+ * Otherwise, saves to appointments table with the specified date (defaults to today).
+ * Used exclusively by API routes (server-side only).
+ */
+export async function createAppointmentInDb(
+  userId: number,
+  appointment: Appointment,
+  date?: string
+): Promise<void> {
+  // Dynamic import to avoid bundling db code in client
+  const { db, schema } = await import("@/lib/db");
+
+  try {
+    if (appointment.isRepeating && appointment.repeatDays.length > 0) {
+      // Save as recurring appointment
+      await db.insert(schema.recurringAppointments).values({
+        id: appointment.id,
+        userId,
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
+        category: appointment.category,
+        description: appointment.description,
+        repeatDays: appointment.repeatDays,
+        updatedAt: new Date(),
+      });
+    } else {
+      // Save as one-time appointment
+      const targetDate = date || new Date().toISOString().split("T")[0];
+
+      await db.insert(schema.appointments).values({
+        id: appointment.id,
+        userId,
+        date: targetDate,
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
+        category: appointment.category,
+        description: appointment.description,
+        updatedAt: new Date(),
+      });
+    }
+  } catch (error) {
+    console.error("Error creating appointment in database:", error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes an appointment from the database.
+ * Handles both one-time appointments and recurring appointments.
+ * 
+ * For recurring appointments:
+ * - ID format is "originalId-date" (e.g., "123-2025-01-15")
+ * - Instead of deleting the entire recurring template, removes only the specific day from repeatDays
+ * - If only one day remains, removes that day. If no days remain, deletes the entire template.
+ * 
+ * For one-time appointments:
+ * - Deletes the appointment directly from the appointments table.
+ * 
+ * Used exclusively by API routes (server-side only).
+ */
+export async function deleteAppointmentFromDb(
+  userId: number,
+  appointmentId: string
+): Promise<void> {
+  // Dynamic import to avoid bundling db code in client
+  const { db, schema } = await import("@/lib/db");
+  const { eq, and } = await import("drizzle-orm");
+
+  try {
+    // Check if it's a recurring appointment (format: "originalId-YYYY-MM-DD")
+    // Recurring appointments have a date suffix in format YYYY-MM-DD
+    // We check if the last 3 parts form a valid date (YYYY-MM-DD)
+    const parts = appointmentId.split("-");
+    const hasDateSuffix = parts.length >= 4; // Format: "id-YYYY-MM-DD" has at least 4 parts
+
+    if (hasDateSuffix) {
+      // Try to parse the last 3 parts as a date (YYYY-MM-DD)
+      const potentialDate = parts.slice(-3).join("-");
+      const dateMatch = potentialDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      
+      if (dateMatch) {
+        // Valid date format found - this is a recurring appointment instance
+        const recurringId = parts.slice(0, -3).join("-");
+        const dateStr = potentialDate;
+        const dayOfWeek = getDayOfWeek(dateStr);
+
+      // Fetch the current recurring appointment to get its repeatDays
+      const recurringAppointment = await db
+        .select()
+        .from(schema.recurringAppointments)
+        .where(
+          and(
+            eq(schema.recurringAppointments.id, recurringId),
+            eq(schema.recurringAppointments.userId, userId)
+          )
+        )
+        .limit(1);
+
+      if (recurringAppointment.length === 0) {
+        // Appointment not found, nothing to delete
+        return;
+      }
+
+      const currentRepeatDays = recurringAppointment[0].repeatDays || [];
+      
+      // Remove the specific day from repeatDays
+      const updatedRepeatDays = currentRepeatDays.filter((day) => day !== dayOfWeek);
+
+        if (updatedRepeatDays.length === 0) {
+          // No days left, delete the entire recurring appointment template
+          await db
+            .delete(schema.recurringAppointments)
+            .where(
+              and(
+                eq(schema.recurringAppointments.id, recurringId),
+                eq(schema.recurringAppointments.userId, userId)
+              )
+            );
+        } else {
+          // Update the recurring appointment to remove the specific day
+          await db
+            .update(schema.recurringAppointments)
+            .set({
+              repeatDays: updatedRepeatDays,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(schema.recurringAppointments.id, recurringId),
+                eq(schema.recurringAppointments.userId, userId)
+              )
+            );
+        }
+      } else {
+        // Date format not valid, treat as one-time appointment
+        await db
+          .delete(schema.appointments)
+          .where(
+            and(
+              eq(schema.appointments.id, appointmentId),
+              eq(schema.appointments.userId, userId)
+            )
+          );
+      }
+    } else {
+      // One-time appointment - delete directly
+      await db
+        .delete(schema.appointments)
+        .where(
+          and(
+            eq(schema.appointments.id, appointmentId),
+            eq(schema.appointments.userId, userId)
+          )
+        );
+    }
+  } catch (error) {
+    console.error("Error deleting appointment from database:", error);
+    throw error;
+  }
+}
+

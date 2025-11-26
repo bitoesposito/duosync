@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { deleteAppointmentFromDb } from "@/features/appointments/services/appointments-db.service";
+import { deleteAppointmentFromDb } from "@/features/appointments/services/appointments.db.service";
 
 type RemovePayload = {
   userId?: number;

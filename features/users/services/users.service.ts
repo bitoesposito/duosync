@@ -1,17 +1,29 @@
-import { getUserDirectory } from "@/lib/config/users";
 import { UserProfile } from "@/types";
 
 /**
- * Returns the user list defined in the project-level config file.
+ * Users service - handles all user-related operations.
+ * Includes both client-side API calls and utility functions.
  */
-export function listUsers(): UserProfile[] {
-  return getUserDirectory();
-}
+
+// ============================================================================
+// CLIENT-SIDE API - HTTP calls from browser
+// ============================================================================
 
 /**
- * Finds a user by id or returns undefined when not configured.
+ * Fetches all available users from the server via API.
+ * Used by the users context to load users on mount.
+ * @returns Promise resolving to an array of user profiles
+ * @throws Error if the request fails
  */
-export function findUserById(id: number | undefined): UserProfile | undefined {
-  if (typeof id === "undefined") return undefined;
-  return listUsers().find((user) => user.id === id);
+export async function fetchUsers(): Promise<UserProfile[]> {
+  const response = await fetch("/api/users", {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load users");
+  }
+
+  const data = (await response.json()) as { users: UserProfile[] };
+  return data.users || [];
 }
