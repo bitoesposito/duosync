@@ -54,12 +54,16 @@ export function findFirstAvailableSlot(
   }
 
   // Check if there's time left until end of day
+  // A valid appointment needs at least 1 minute, so if currentTime is 23:59,
+  // there's no space available (can't create an appointment that starts and ends at 23:59)
   const dayEnd = dayjs("23:59", TWENTY_FOUR_HOUR_FORMAT);
-  if (currentTime.isBefore(dayEnd) || currentTime.isSame(dayEnd)) {
+  if (currentTime.isBefore(dayEnd)) {
+    // There's at least 1 minute available (from currentTime to 23:59)
     return currentTime.format(TWENTY_FOUR_HOUR_FORMAT);
   }
 
-  return null; // No slots available
+  // If currentTime is 23:59 or after, no slots available
+  return null;
 }
 
 /**
@@ -114,8 +118,11 @@ export function getAvailableSlots(
   }
 
   // Add final slot from last appointment to end of day
+  // A valid slot needs at least 1 minute, so if currentTime is 23:59,
+  // there's no space available
   const dayEnd = dayjs("23:59", TWENTY_FOUR_HOUR_FORMAT);
-  if (currentTime.isBefore(dayEnd) || currentTime.isSame(dayEnd)) {
+  if (currentTime.isBefore(dayEnd)) {
+    // There's at least 1 minute available (from currentTime to 23:59)
     slots.push({
       start: currentTime.format(TWENTY_FOUR_HOUR_FORMAT),
       end: dayEnd.format(TWENTY_FOUR_HOUR_FORMAT),

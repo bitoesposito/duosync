@@ -9,6 +9,7 @@ import { useAppointments } from "@/features/appointments";
 import { useI18n } from "@/i18n";
 import { useUsers } from "@/features/users";
 import { buildAppointmentFormData } from "@/features/appointments";
+import { findFirstAvailableSlot } from "@/features/appointments/services/appointments-time-utils.service";
 import { AppointmentCategory, DayId } from "@/types";
 import { CategorySelector } from "./form-category-selector";
 import { TimeInputs } from "./form-time-inputs";
@@ -43,7 +44,7 @@ export default function AppointmentsForm() {
   useEffect(() => {
     if (activeUser && !isLoading) {
       setHasUserEditedTimes(false);
-      // Reset to empty - fields will be filled on focus
+      // Reset to empty - fields will be filled automatically
       setStartTime("");
       setEndTime("");
       setDescription("");
@@ -53,6 +54,17 @@ export default function AppointmentsForm() {
       setAreTimeInputsValid(false);
     }
   }, [activeUser?.id, isLoading]);
+
+  // Auto-set start time to first available slot when empty and appointments are loaded
+  useEffect(() => {
+    if (activeUser && !isLoading && !startTime && !hasUserEditedTimes) {
+      const firstSlot = findFirstAvailableSlot(appointments || []);
+      if (firstSlot) {
+        setStartTime(firstSlot);
+        // Don't set hasUserEditedTimes to true for auto-initialization
+      }
+    }
+  }, [activeUser, isLoading, startTime, hasUserEditedTimes, appointments]);
 
   // Track when user manually changes times
   const handleStartTimeChange = useCallback(

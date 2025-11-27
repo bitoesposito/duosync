@@ -61,6 +61,26 @@ export function useTimeInputValidation({
     return calculateOptimalEndTime(startTime, existingAppointments);
   }, [startTime, existingAppointments, disabled]);
 
+  // Check if start time is within an existing appointment
+  const isStartTimeWithinAppointment = useMemo(() => {
+    if (!startTime || disabled) return false;
+    
+    const start = parseTimeStrict(startTime);
+    if (!start.isValid()) return false;
+
+    return existingAppointments.some((appointment) => {
+      const appointmentStart = parseTimeStrict(appointment.startTime);
+      const appointmentEnd = parseTimeStrict(appointment.endTime);
+
+      if (!appointmentStart.isValid() || !appointmentEnd.isValid()) {
+        return false;
+      }
+
+      // Check if start time is within this appointment (after start and before end)
+      return start.isAfter(appointmentStart) && start.isBefore(appointmentEnd);
+    });
+  }, [startTime, existingAppointments, disabled]);
+
   // Validate start time
   useEffect(() => {
     if (!startTime || disabled) {
@@ -73,6 +93,15 @@ export function useTimeInputValidation({
       setValidation((prev) => ({
         ...prev,
         startTimeError: "invalid-format",
+      }));
+      return;
+    }
+
+    // Check if start time is within an existing appointment
+    if (isStartTimeWithinAppointment) {
+      setValidation((prev) => ({
+        ...prev,
+        startTimeError: "overlap",
       }));
       return;
     }
@@ -98,7 +127,7 @@ export function useTimeInputValidation({
     }
 
     setValidation((prev) => ({ ...prev, startTimeError: undefined }));
-  }, [startTime, endTime, existingAppointments, disabled]);
+  }, [startTime, endTime, existingAppointments, disabled, isStartTimeWithinAppointment]);
 
   // Validate end time
   useEffect(() => {

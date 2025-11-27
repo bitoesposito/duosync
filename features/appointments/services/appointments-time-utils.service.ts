@@ -29,3 +29,21 @@ export {
   getSuggestedStartTime,
   getSuggestedEndTime,
 } from "./appointments-time-suggestions.service";
+
+// Duration utilities
+export {
+  calculateMaxAvailableTime,
+  calculateAvailableHours,
+  calculateAvailableMinutes,
+  getTotalMinutes,
+  calculateEndTimeFromDuration,
+  calculateDurationFromTimes,
+  isQuickActionValid,
+  calculateEndOfDayDuration,
+} from "./appointments-duration.service";
+
+// Time correction utilities
+export {
+  isStartTimeWithinAppointment,
+  correctStartTimeIfInvalid,
+} from "./appointments-time-correction.service";

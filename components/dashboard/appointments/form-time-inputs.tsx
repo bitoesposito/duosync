@@ -1,22 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect, useMemo } from "react";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { Appointment } from "@/types";
 import {
   findFirstAvailableSlot,
-  getMinEndTime,
+  correctStartTimeIfInvalid,
 } from "@/features/appointments/services/appointments-time-utils.service";
+import {
+  calculateMaxAvailableTime,
+  calculateAvailableHours,
+  calculateAvailableMinutes,
+  getTotalMinutes,
+  isQuickActionValid,
+  calculateEndOfDayDuration,
+} from "@/features/appointments/services/appointments-duration.service";
 import { useTimeInputValidation } from "@/hooks/use-time-input-validation";
+import { useDurationState } from "@/hooks/use-duration-state";
+import { useTimeInputDisabled } from "@/hooks/use-time-input-disabled";
+import { StartTimeInput } from "./time-inputs/start-time-input";
+import { EndTimeInput } from "./time-inputs/end-time-input";
+import { DurationInputs } from "./time-inputs/duration-inputs";
+import { QuickActions } from "./time-inputs/quick-actions";
+import { Timer } from "lucide-react";
 import dayjs from "@/lib/time/dayjs";
-import { Clock, Timer, ChevronRight } from "lucide-react";
 
 type TimeInputsProps = {
   startTime: string;
@@ -35,6 +46,8 @@ type InputMode = "duration" | "endTime";
  * Time inputs component with real-time validation.
  * Shows visual feedback (red border) and tooltips for invalid inputs.
  * Supports "Duration" mode for easier mobile input.
+ * 
+ * Refactored to be more presentational - business logic extracted to services and hooks.
  */
 export function TimeInputs({
   startTime,
@@ -46,6 +59,11 @@ export function TimeInputs({
   existingAppointments = [],
   onValidationChange,
 }: TimeInputsProps) {
+  const [mode, setMode] = useState<InputMode>("duration");
+  const [hoursComboboxOpen, setHoursComboboxOpen] = useState(false);
+  const [minutesComboboxOpen, setMinutesComboboxOpen] = useState(false);
+
+  // Validation hook
   const {
     validation,
     hasAvailableSlots,
@@ -62,116 +80,145 @@ export function TimeInputs({
     onValidationChange,
   });
 
-  const [mode, setMode] = useState<InputMode>("duration");
-  const [durationHours, setDurationHours] = useState<string>("");
-  const [durationMinutes, setDurationMinutes] = useState<string>("");
+  // Duration state hook
+  const {
+    durationHours,
+    durationMinutes,
+    setDurationHours,
+    setDurationMinutes,
+    handleHoursChange,
+    handleMinutesChange,
+    handleStartTimeChangeInDurationMode,
+    updateEndTimeFromDuration,
+  } = useDurationState({
+    startTime,
+    endTime,
+    onEndTimeChange,
+    mode,
+  });
 
-  // Helper to calculate total minutes from hours and minutes
-  const getTotalMinutes = (hours: string, minutes: string): number => {
-    const h = parseInt(hours || "0", 10);
-    const m = parseInt(minutes || "0", 10);
-    return h * 60 + m;
-  };
+  // Calculate max available time for duration constraints
+  const maxAvailableTime = useMemo(() => {
+    return calculateMaxAvailableTime(startTime, existingAppointments);
+  }, [startTime, existingAppointments]);
 
-  // Sync duration when start/end time changes externally and we are NOT editing duration
-  useEffect(() => {
-    if (startTime && endTime) {
-      const start = dayjs(startTime, "HH:mm");
-      const end = dayjs(endTime, "HH:mm");
-      if (start.isValid() && end.isValid()) {
-        const diff = end.diff(start, "minute");
-        if (diff > 0) {
-          const hours = Math.floor(diff / 60);
-          const minutes = diff % 60;
-          setDurationHours(hours.toString());
-          setDurationMinutes(minutes.toString());
-        }
-      }
-    } else if (!endTime) {
-      setDurationHours("");
-      setDurationMinutes("");
-    }
-  }, [startTime, endTime]);
+  // Calculate available hours and minutes options
+  const availableHours = useMemo(() => {
+    return calculateAvailableHours(startTime, maxAvailableTime);
+  }, [startTime, maxAvailableTime]);
 
-  const updateEndTimeFromDuration = (start: string, minutes: number) => {
-    if (!start) return;
-    const startDate = dayjs(start, "HH:mm");
-    if (startDate.isValid()) {
-      const endDate = startDate.add(minutes, "minute");
-      // If we crossed midnight, cap at 23:59
-      if (!endDate.isSame(startDate, "day")) {
-        onEndTimeChange("23:59");
-      } else {
-        onEndTimeChange(endDate.format("HH:mm"));
-      }
-    }
-  };
+  const availableMinutes = useMemo(() => {
+    return calculateAvailableMinutes(startTime, maxAvailableTime, durationHours);
+  }, [startTime, maxAvailableTime, durationHours]);
 
+  // Disabled conditions hook
+  const {
+    minStartTime,
+    isStartTimeDisabled,
+    isModeToggleDisabled,
+    isDurationHoursDisabled,
+    isDurationMinutesDisabled,
+    isEndTimeDisabled,
+    isQuickActionBaseDisabled,
+  } = useTimeInputDisabled({
+    disabled,
+    startTime,
+    endTime,
+    hasStartError,
+    hasEndError,
+    hasAvailableSlots,
+    maxAvailableTime,
+    availableHours,
+    availableMinutes,
+    existingAppointments,
+  });
+
+  // Handle start time change with auto-correction
   const handleStartTimeChange = (value: string) => {
-    onStartTimeChange(value);
+    if (!value) {
+      onStartTimeChange(value);
+      return;
+    }
 
-    if (mode === "duration" && (durationHours || durationMinutes)) {
-      // If in duration mode, keep duration constant and shift end time
+    // Auto-correct if invalid
+    const correctedTime = correctStartTimeIfInvalid(value, existingAppointments);
+    onStartTimeChange(correctedTime);
+
+    // If corrected, handle duration mode update
+    if (correctedTime !== value && mode === "duration" && (durationHours || durationMinutes)) {
       const totalMinutes = getTotalMinutes(durationHours, durationMinutes);
       if (totalMinutes > 0) {
-        updateEndTimeFromDuration(value, totalMinutes);
+        updateEndTimeFromDuration(correctedTime, totalMinutes);
         return;
       }
     }
 
+    // Handle duration mode update
+    handleStartTimeChangeInDurationMode(correctedTime);
+
     // Legacy behavior for endTime mode
-    if (value && endTime) {
-      const minEnd = getMinEndTime(value);
+    if (correctedTime && endTime && mode === "endTime") {
+      const minEnd = minEndTime;
       if (endTime < minEnd) {
         onEndTimeChange(minEnd);
       }
     }
   };
 
-  const handleDurationHoursChange = (val: string) => {
-    setDurationHours(val);
-    const totalMinutes = getTotalMinutes(val, durationMinutes);
-    if (totalMinutes > 0 && startTime) {
-      updateEndTimeFromDuration(startTime, totalMinutes);
-    } else if (totalMinutes === 0 && startTime) {
-      // If both are empty or zero, clear end time
-      onEndTimeChange("");
-    }
+  // Handle hours select from combobox
+  const handleHoursSelect = (selectedValue: string) => {
+    const newValue = selectedValue === durationHours ? "" : selectedValue;
+    setDurationHours(newValue);
+    setHoursComboboxOpen(false);
+    handleHoursChange(newValue);
   };
 
-  const handleDurationMinutesChange = (val: string) => {
-    setDurationMinutes(val);
-    const totalMinutes = getTotalMinutes(durationHours, val);
-    if (totalMinutes > 0 && startTime) {
-      updateEndTimeFromDuration(startTime, totalMinutes);
-    } else if (totalMinutes === 0 && startTime) {
-      // If both are empty or zero, clear end time
-      onEndTimeChange("");
-    }
+  // Handle minutes select from combobox
+  const handleMinutesSelect = (selectedValue: string) => {
+    const newValue = selectedValue === durationMinutes ? "" : selectedValue;
+    setDurationMinutes(newValue);
+    setMinutesComboboxOpen(false);
+    handleMinutesChange(newValue);
   };
 
-  const handlePresetClick = (minutes: number | "endOfDay") => {
+  // Handle quick actions
+  const handleQuickAction = (minutes: number | "endOfDay") => {
     if (!startTime) return;
 
-    let calculatedMinutes = 0;
-
     if (minutes === "endOfDay") {
+      // Special case: set end time directly to 23:59 and calculate duration from that
+      if (startTime === "23:59") {
+        return; // Cannot set end of day if already at end of day
+      }
+
       const start = dayjs(startTime, "HH:mm");
       const endOfDay = dayjs("23:59", "HH:mm");
-      calculatedMinutes = endOfDay.diff(start, "minute");
-    } else {
-      calculatedMinutes = minutes;
-    }
+      if (start.isValid() && endOfDay.isValid() && start.isBefore(endOfDay)) {
+        onEndTimeChange("23:59");
 
-    const hours = Math.floor(calculatedMinutes / 60);
-    const mins = calculatedMinutes % 60;
-    setDurationHours(hours.toString());
-    setDurationMinutes(mins.toString());
-    updateEndTimeFromDuration(startTime, calculatedMinutes);
+        const duration = calculateEndOfDayDuration(startTime);
+        if (duration) {
+          setDurationHours(duration.hours);
+          setDurationMinutes(duration.minutes);
+        }
+      }
+    } else {
+      // For fixed durations, calculate normally
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      setDurationHours(hours.toString());
+      setDurationMinutes(mins.toString());
+      updateEndTimeFromDuration(startTime, minutes);
+    }
   };
 
+  // Check if quick action is valid
+  const isQuickActionValidCheck = (minutes: number | "endOfDay"): boolean => {
+    return isQuickActionValid(startTime, minutes, maxAvailableTime, existingAppointments);
+  };
+
+  // Handle start time focus
   const handleStartTimeFocus = () => {
-    // If field is empty, suggest first available slot
     if (!startTime && hasAvailableSlots) {
       const firstSlot = findFirstAvailableSlot(existingAppointments);
       if (firstSlot) {
@@ -180,21 +227,21 @@ export function TimeInputs({
     }
   };
 
+  // Handle end time focus
   const handleEndTimeFocus = () => {
-    // If start time is set and end time is empty, suggest optimal end time
     if (startTime && !endTime && hasAvailableSlots && optimalEndTime) {
-      // Convert 24:00 to 23:59 if needed
       const normalizedOptimal = optimalEndTime === "24:00" ? "23:59" : optimalEndTime;
       onEndTimeChange(normalizedOptimal);
     }
   };
 
+  // Handle end time change (normalize 24:00 to 23:59)
   const handleEndTimeChange = (value: string) => {
-    // Convert 24:00 to 23:59 automatically
     const normalizedValue = value === "24:00" ? "23:59" : value;
     onEndTimeChange(normalizedValue);
   };
 
+  // Error messages
   const getStartErrorMessage = () => {
     if (validation.startTimeError === "invalid-format") {
       return t("form.validation.invalidFormat");
@@ -234,177 +281,90 @@ export function TimeInputs({
         >
           {t("form.startLabel")}
         </Label>
-        {hasStartError && startErrorMessage ? (
-          <Popover>
-            <PopoverTrigger asChild>
-              <div className="w-full">
-                <Input
-                  id="start-time"
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => handleStartTimeChange(e.target.value)}
-                  className={cn(
-                    "w-full bg-transparent border-border rounded-none h-10 text-sm",
-                    hasStartError &&
-                    "border-destructive focus-visible:border-destructive"
-                  )}
-                  aria-invalid={hasStartError}
-                  lang="it-IT"
-                  min="00:00"
-                  max="23:59"
-                  step="60"
-                  disabled={disabled || !hasAvailableSlots}
-                />
-              </div>
-            </PopoverTrigger>
-            <PopoverContent className="rounded-none border-border w-auto p-3">
-              <div className="space-y-1">
-                <p className="font-semibold text-sm">{startErrorMessage}</p>
-                {nextAvailableSlot && validation.startTimeError === "overlap" && (
-                  <p className="text-xs text-muted-foreground">
-                    {t("form.validation.startTimeHint", {
-                      time: nextAvailableSlot,
-                    })}
-                  </p>
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
-        ) : (
-          <Input
-            id="start-time"
-            type="time"
-            value={startTime}
-            onChange={(e) => handleStartTimeChange(e.target.value)}
-            onFocus={handleStartTimeFocus}
-            className={cn(
-              "w-full bg-transparent border-border rounded-none h-10 text-sm",
-              hasStartError &&
-              "border-destructive focus-visible:border-destructive"
-            )}
-            aria-invalid={hasStartError}
-            lang="it-IT"
-            min="00:00"
-            max="23:59"
-            step="60"
-            disabled={disabled || !hasAvailableSlots}
-          />
-        )}
+        <StartTimeInput
+          id="start-time"
+          value={startTime}
+          onChange={handleStartTimeChange}
+          onFocus={handleStartTimeFocus}
+          min={minStartTime}
+          hasError={hasStartError}
+          errorMessage={startErrorMessage}
+          nextAvailableSlot={nextAvailableSlot}
+          disabled={isStartTimeDisabled}
+          t={t}
+        />
       </div>
 
       <div className="flex flex-col gap-2">
         <Separator />
 
         {/* Mode Toggle Section */}
-        <div className="flex items-center justify-between py-1">
-          <div className="flex items-center gap-2">
-            <Timer className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium">{t("form.modeDuration")}</span>
-          </div>
-          <Switch
-            checked={mode === "duration"}
-            onCheckedChange={(checked) => setMode(checked ? "duration" : "endTime")}
-            disabled={disabled || !startTime}
-            className="cursor-pointer"
-          />
+        <div className="flex flex-col gap-2">
+          <Label className="text-muted-foreground text-xs font-medium uppercase flex items-center gap-2">
+            <Timer className="w-4 h-4" />
+            {t("form.modeDuration")}
+          </Label>
+          <ButtonGroup className="w-full overflow-x-auto border border-border rounded-none p-0.5">
+            <Button
+              className="flex-1 gap-2 cursor-pointer rounded-none border-none shadow-none h-9 text-sm"
+              variant={mode === "duration" ? "secondary" : "ghost"}
+              onClick={() => setMode("duration")}
+              disabled={isModeToggleDisabled}
+            >
+              {t("form.modeDuration")}
+            </Button>
+            <Button
+              className="flex-1 gap-2 cursor-pointer rounded-none border-none shadow-none h-9 text-sm"
+              variant={mode === "endTime" ? "secondary" : "ghost"}
+              onClick={() => setMode("endTime")}
+              disabled={isModeToggleDisabled}
+            >
+              {t("form.endLabel")}
+            </Button>
+          </ButtonGroup>
         </div>
 
         <Separator />
-
       </div>
 
       {/* End Time / Duration Section */}
       {mode === "duration" ? (
         <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-2">
-              <Label
-                htmlFor="duration-hours"
-                className="text-muted-foreground text-xs font-medium uppercase"
-              >
-                {t("form.durationHoursLabel")}
-              </Label>
-              <Input
-                id="duration-hours"
-                type="number"
-                value={durationHours}
-                onChange={(e) => handleDurationHoursChange(e.target.value)}
-                className="w-full bg-transparent border-border rounded-none h-10 text-sm"
-                disabled={disabled || !startTime}
-                min="0"
-                placeholder="0"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label
-                htmlFor="duration-minutes"
-                className="text-muted-foreground text-xs font-medium uppercase"
-              >
-                {t("form.durationMinutesLabel")}
-              </Label>
-              <Input
-                id="duration-minutes"
-                type="number"
-                value={durationMinutes}
-                onChange={(e) => handleDurationMinutesChange(e.target.value)}
-                className="w-full bg-transparent border-border rounded-none h-10 text-sm"
-                disabled={disabled || !startTime}
-                min="0"
-                max="59"
-                placeholder="0"
-              />
-            </div>
-          </div>
+          <DurationInputs
+            hours={durationHours}
+            minutes={durationMinutes}
+            availableHours={availableHours}
+            availableMinutes={availableMinutes}
+            hoursComboboxOpen={hoursComboboxOpen}
+            minutesComboboxOpen={minutesComboboxOpen}
+            onHoursComboboxOpenChange={setHoursComboboxOpen}
+            onMinutesComboboxOpenChange={setMinutesComboboxOpen}
+            onHoursSelect={handleHoursSelect}
+            onMinutesSelect={handleMinutesSelect}
+            hoursDisabled={isDurationHoursDisabled}
+            minutesDisabled={isDurationMinutesDisabled}
+            t={t}
+          />
 
           {/* Calculated End Time Display */}
           {endTime && !hasEndError && startTime && (
-            <div className="flex items-center justify-between px-2 py-2 bg-muted/30 rounded-sm border border-border/50">
+            <div className="flex items-center gap-2 px-2 py-1">
               <span className="text-xs text-muted-foreground">
-                {t("form.endLabel")}
+                {t("form.endLabel")}:
               </span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold">{endTime}</span>
-                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-              </div>
+              <span className="text-sm font-semibold text-foreground">
+                {endTime}
+              </span>
             </div>
           )}
 
-          {/* Quick Presets */}
-          <div className="flex flex-col gap-2">
-            <Label className="text-muted-foreground text-xs font-medium uppercase">
-              {t("form.quickPresetsLabel")}
-            </Label>
-            <div className="w-full overflow-x-auto pb-1">
-              <ToggleGroup
-                type="single"
-                value={getTotalMinutes(durationHours, durationMinutes).toString()}
-                onValueChange={(val) => {
-                  if (!val) return;
-                  if (val === "endOfDay") handlePresetClick("endOfDay");
-                  else handlePresetClick(parseInt(val, 10));
-                }}
-                className="justify-start gap-2"
-              >
-                <ToggleGroupItem
-                  value="endOfDay"
-                  className="h-9 px-4 text-sm border border-border rounded-sm whitespace-nowrap data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary"
-                >
-                  {t("form.endOfDay")}
-                </ToggleGroupItem>
-                {[30, 60, 90, 120].map((m) => (
-                  <ToggleGroupItem
-                    key={m}
-                    value={m.toString()}
-                    className="h-9 px-4 text-sm border border-border rounded-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary"
-                  >
-                    {m < 60
-                      ? `${m}m`
-                      : `${Math.floor(m / 60)}h${m % 60 > 0 ? " " + (m % 60) + "m" : ""}`}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </div>
-          </div>
+          {/* Quick Actions */}
+          <QuickActions
+            onQuickAction={handleQuickAction}
+            isQuickActionValid={isQuickActionValidCheck}
+            baseDisabled={isQuickActionBaseDisabled}
+            t={t}
+          />
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -417,60 +377,18 @@ export function TimeInputs({
           >
             {t("form.endLabel")}
           </Label>
-          {hasEndError && endErrorMessage ? (
-            <Popover>
-              <PopoverTrigger asChild>
-                <div className="w-full">
-                  <Input
-                    id="end-time"
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => handleEndTimeChange(e.target.value)}
-                    className={cn(
-                      "w-full bg-transparent border-border rounded-none h-10 text-sm",
-                      hasEndError &&
-                      "border-destructive focus-visible:border-destructive"
-                    )}
-                    aria-invalid={hasEndError}
-                    lang="it-IT"
-                    min={minEndTime}
-                    max="23:59"
-                    step="60"
-                    disabled={disabled || !hasAvailableSlots || !startTime}
-                  />
-                </div>
-              </PopoverTrigger>
-              <PopoverContent className="rounded-none border-border w-auto p-3">
-                <div className="space-y-1">
-                  <p className="font-semibold text-sm">{endErrorMessage}</p>
-                  {validation.endTimeError === "end-before-start" && startTime && (
-                    <p className="text-xs text-muted-foreground">
-                      {t("form.validation.endTimeHint", { time: minEndTime })}
-                    </p>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
-          ) : (
-            <Input
-              id="end-time"
-              type="time"
-              value={endTime}
-              onChange={(e) => handleEndTimeChange(e.target.value)}
-              onFocus={handleEndTimeFocus}
-              className={cn(
-                "w-full bg-transparent border-border rounded-none h-10 text-sm",
-                hasEndError &&
-                "border-destructive focus-visible:border-destructive"
-              )}
-              aria-invalid={hasEndError}
-              lang="it-IT"
-              min={minEndTime}
-              max="23:59"
-              step="60"
-              disabled={disabled || !hasAvailableSlots || !startTime}
-            />
-          )}
+          <EndTimeInput
+            id="end-time"
+            value={endTime}
+            onChange={handleEndTimeChange}
+            onFocus={handleEndTimeFocus}
+            min={minEndTime}
+            hasError={hasEndError}
+            errorMessage={endErrorMessage}
+            startTime={startTime}
+            disabled={isEndTimeDisabled}
+            t={t}
+          />
         </div>
       )}
     </div>

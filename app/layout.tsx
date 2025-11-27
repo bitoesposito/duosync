@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { I18nProvider } from "@/i18n";
 import "./globals.css";
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +32,25 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
+        {/* 
+          Banner to notify users that the app is under construction.
+          Only presentational logic: can be refactored later into a reusable component in components/layout if needed.
+        */}
+        <div
+          className="bg-yellow-500 text-black border-b border-yellow-600 p-2 text-center font-medium text-sm leading-none tracking-tight z-50 relative"
+          aria-live="polite"
+          role="status"
+        >
+          <span>
+            App in sviluppo, per informazioni{" "}
+            <Link
+              href="https://blog.vitoesposito.it"
+              className="text-blue-600 hover:underline hover:text-blue-700"
+            >
+              Visita il blog
+            </Link>
+          </span>
+        </div>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
