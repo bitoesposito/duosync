@@ -75,7 +75,7 @@ function DashboardContent({ showOverlay }: { showOverlay: boolean }) {
         showOverlay ? "opacity-40 pointer-events-none" : ""
       }`}
     >
-      <div className="col-span-12 md:col-span-4 lg:col-span-3 sticky top-6">
+      <div className="col-span-12 md:col-span-4 lg:col-span-3 md:sticky md:top-6 relative z-10 md:z-auto">
         <AppointmentsForm />
       </div>
 

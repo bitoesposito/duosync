@@ -118,7 +118,7 @@ export default function AppointmentsForm() {
   ]);
 
   return (
-    <section className="w-full flex flex-col gap-0 border-b border-border">
+    <section className="w-full flex flex-col gap-0 border-b border-border md:border-b-0 bg-background md:bg-transparent">
       <header
         className="flex items-center justify-between py-3 md:pt-0 pt-3 md:cursor-default cursor-pointer hover:opacity-70 md:hover:opacity-100 transition-opacity"
         onClick={() => setIsOpen(!isOpen)}
@@ -140,7 +140,7 @@ export default function AppointmentsForm() {
       </header>
 
       <div className={`${isOpen ? "block" : "hidden"} md:block`}>
-        <div className="flex flex-col gap-4 pb-6">
+        <div className="flex flex-col gap-4 pb-6 md:pb-0">
           <CategorySelector
             selectedCategory={selectedCategory}
             onCategoryChange={setSelectedCategory}
