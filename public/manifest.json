@@ -1,0 +1,18 @@
+{
+  "name": "DuoSync",
+  "short_name": "DuoSync",
+  "description": "Sincronizza i tuoi impegni con il tuo partner",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}
+

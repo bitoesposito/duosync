@@ -10,6 +10,7 @@ import { ClockIcon, CheckIcon } from "lucide-react";
 import AppointmentsListItem from "./list-item";
 import { useAppointments } from "@/features/appointments";
 import { useI18n } from "@/i18n";
+import { useNotifications } from "@/hooks";
 import { parseTimeStrict } from "@/lib/time/dayjs";
 import { Appointment } from "@/types";
 
@@ -30,8 +31,44 @@ export default function AppointmentsList() {
   const { appointments, removeAppointment, isLoading, isSaving } =
     useAppointments();
   const { t } = useI18n();
+  const { isSupported, permission, requestPermission, notify, isReady } =
+    useNotifications();
   const hasAppointments = appointments.length > 0;
   const confirmDisabled = !hasAppointments || isLoading || isSaving;
+
+  /**
+   * Handles the confirm button click: requests permission if needed and sends a test notification.
+   */
+  const handleConfirm = async () => {
+    if (!isSupported) {
+      console.warn("Notifications are not supported in this browser");
+      return;
+    }
+
+    // Request permission if not already granted
+    if (permission !== "granted") {
+      const granted = await requestPermission();
+      if (!granted) {
+        console.warn("Notification permission denied");
+        return;
+      }
+    }
+
+    // Wait for service worker to be ready
+    if (!isReady) {
+      console.warn("Service worker not ready yet");
+      return;
+    }
+
+    // Send test notification
+    const title = t("notifications.confirm.title");
+    const body = t("notifications.confirm.body");
+    
+    await notify(title, {
+      body,
+      tag: "appointment-confirmation",
+    });
+  };
 
   // Separate and sort appointments by category
   const { sleepAppointments, otherAppointments } = useMemo(() => {
@@ -66,11 +103,12 @@ export default function AppointmentsList() {
 
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger asChild className="cursor-pointer">
               <Button
                 disabled={confirmDisabled}
                 size="sm"
                 className="rounded-none font-medium h-9 px-4"
+                onClick={handleConfirm}
               >
                 <CheckIcon className="w-4 h-4 mr-2" /> {t("list.confirm")}
               </Button>

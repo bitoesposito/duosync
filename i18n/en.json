@@ -26,10 +26,12 @@
     "selectUserFallback": "Select user",
     "selectLanguageFallback": "Language",
     "theme": "Theme",
-    "themeLight": "Light",
-    "themeDark": "Dark",
-    "themeSystem": "System",
-    "settings": "Settings"
+    "themeLight": "Light theme",
+    "themeDark": "Dark theme",
+    "themeSystem": "System theme",
+    "settings": "Settings",
+    "installApp": "Install app",
+    "installAppTooltip": "Install DuoSync on your device"
   },
   "dashboard": {
     "greeting": "Hi, {{name}}",
@@ -112,6 +114,52 @@
     "deleteError": {
       "title": "Unable to remove appointment",
       "description": "We restored the previous data."
+    }
+  },
+  "notifications": {
+    "confirm": {
+      "title": "Appointments confirmed",
+      "bodySingular": "You confirmed 1 appointment",
+      "bodyPlural": "You confirmed {{count}} appointments"
+    }
+  },
+  "settings": {
+    "pwa": {
+      "title": "App Settings",
+      "install": {
+        "title": "Install application",
+        "available": "Install DuoSync on your device for quick access",
+        "notAvailable": "Installation is not available on this device",
+        "installed": "DuoSync is installed on your device",
+        "installedLabel": "Installed",
+        "install": "Install",
+        "installing": "Installing..."
+      },
+      "notifications": {
+        "title": "Enable notifications",
+        "enabled": "Receive notifications when your partner confirms appointments",
+        "disabled": "Notifications have been disabled. Enable them from browser settings",
+        "available": "Enable notifications to receive important updates",
+        "notSupported": "Notifications are not supported on this device",
+        "enabledLabel": "Enabled",
+        "disabledLabel": "Disabled",
+        "disabledHint": "To re-enable, open browser settings and allow notifications for this site"
+      }
+    }
+  },
+  "onboarding": {
+    "install": {
+      "title": "Install DuoSync",
+      "description": "Install the app on your device for quick access and a better experience. You can use DuoSync even offline.",
+      "install": "Install",
+      "installing": "Installing...",
+      "dismiss": "Not now"
+    },
+    "notifications": {
+      "title": "Enable notifications",
+      "description": "Receive notifications when your partner confirms appointments or when there are important updates.",
+      "enable": "Enable",
+      "dismiss": "Not now"
     }
   }
 }

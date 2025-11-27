@@ -26,10 +26,12 @@
     "selectUserFallback": "Seleziona utente",
     "selectLanguageFallback": "Lingua",
     "theme": "Tema",
-    "themeLight": "Chiaro",
-    "themeDark": "Scuro",
-    "themeSystem": "Sistema",
-    "settings": "Impostazioni"
+    "themeLight": "Tema chiaro",
+    "themeDark": "Tema scuro",
+    "themeSystem": "Tema di sistema",
+    "settings": "Impostazioni",
+    "installApp": "Installa app",
+    "installAppTooltip": "Installa DuoSync sul tuo dispositivo"
   },
   "dashboard": {
     "greeting": "Ciao, {{name}}",
@@ -112,6 +114,51 @@
     "deleteError": {
       "title": "Eliminazione non riuscita",
       "description": "Abbiamo ripristinato l'impegno."
+    }
+  },
+  "notifications": {
+    "confirm": {
+      "title": "Impegni confermati",
+      "body": "Apri l'app per aggiornare gli impegni"
+    }
+  },
+  "settings": {
+    "pwa": {
+      "title": "Impostazioni App",
+      "install": {
+        "title": "Installa applicazione",
+        "available": "Installa DuoSync sul tuo dispositivo per un accesso rapido",
+        "notAvailable": "L'installazione non è disponibile su questo dispositivo",
+        "installed": "DuoSync è installato sul tuo dispositivo",
+        "installedLabel": "Installata",
+        "install": "Installa",
+        "installing": "Installazione..."
+      },
+      "notifications": {
+        "title": "Abilita notifiche",
+        "enabled": "Ricevi notifiche quando il tuo partner conferma gli impegni",
+        "disabled": "Le notifiche sono state disabilitate. Abilita dalle impostazioni del browser",
+        "available": "Abilita le notifiche per ricevere aggiornamenti importanti",
+        "notSupported": "Le notifiche non sono supportate su questo dispositivo",
+        "enabledLabel": "Abilitate",
+        "disabledLabel": "Disabilitate",
+        "disabledHint": "Per riabilitare, apri le impostazioni del browser e consenti le notifiche per questo sito"
+      }
+    }
+  },
+  "onboarding": {
+    "install": {
+      "title": "Installa DuoSync",
+      "description": "Installa l'app sul tuo dispositivo per un accesso rapido e un'esperienza migliore. Potrai usare DuoSync anche offline.",
+      "install": "Installa",
+      "installing": "Installazione...",
+      "dismiss": "Non ora"
+    },
+    "notifications": {
+      "title": "Abilita le notifiche",
+      "description": "Ricevi notifiche quando il tuo partner conferma gli impegni o quando ci sono aggiornamenti importanti.",
+      "enable": "Abilita",
+      "dismiss": "Non ora"
     }
   }
 }
