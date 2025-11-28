@@ -1,10 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import {
   SettingsIcon,
-  DownloadIcon,
-  BellIcon,
   MoonIcon,
   SunIcon,
 } from "lucide-react";
@@ -19,55 +16,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { usePWAInstall } from "@/hooks";
-import { useNotifications } from "@/hooks";
 import { useI18n, SUPPORTED_LOCALES } from "@/i18n";
 import { type Locale } from "@/types";
 
 /**
  * Settings menu component for the header.
- * Contains PWA settings, theme, and language options.
+ * Contains theme and language options.
  */
 export default function SettingsMenu() {
   const { theme, setTheme } = useTheme();
   const { locale, setLocale, t } = useI18n();
-  const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
-  const {
-    isSupported: notificationsSupported,
-    permission,
-    requestPermission,
-    isReady,
-  } = useNotifications();
-
-  const [isInstalling, setIsInstalling] = useState(false);
-  const [isRequestingPermission, setIsRequestingPermission] = useState(false);
-
-  /**
-   * Handles the install button click.
-   */
-  const handleInstall = async () => {
-    setIsInstalling(true);
-    await promptInstall();
-    setIsInstalling(false);
-  };
-
-  /**
-   * Handles notification enable button click.
-   */
-  const handleEnableNotifications = async () => {
-    if (permission === "granted") {
-      return;
-    }
-
-    setIsRequestingPermission(true);
-    await requestPermission();
-    setIsRequestingPermission(false);
-  };
-
-  const notificationsEnabled = permission === "granted";
-  const notificationsDisabled = permission === "denied";
-  const canEnableNotifications =
-    notificationsSupported && permission === "default" && isReady;
 
   return (
     <DropdownMenu>
@@ -140,43 +98,7 @@ export default function SettingsMenu() {
           </ToggleGroup>
         </div>
 
-        <div className="flex flex-col gap-3 p-2">
-          {/* Special Action Buttons - One-time actions at the bottom */}
-          {(!isInstalled || (!notificationsEnabled && canEnableNotifications)) && (
-            <DropdownMenuSeparator />
-          )}
-
-           {!isInstalled && (
-             <Button
-               onClick={handleInstall}
-               disabled={!isInstallable || isInstalling}
-               className="w-full rounded-none font-medium disabled:opacity-50 cursor-pointer"
-               size="sm"
-               variant={!isInstallable ? "outline" : "default"}
-             >
-               <DownloadIcon className="h-4 w-4 mr-2" />
-               {isInstalling
-                 ? t("settings.pwa.install.installing")
-                 : t("settings.pwa.install.install")}
-             </Button>
-           )}
-
-          {!notificationsEnabled && canEnableNotifications && (
-            <Button
-              onClick={handleEnableNotifications}
-              disabled={isRequestingPermission}
-              className="w-full rounded-none font-medium bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-              size="sm"
-            >
-              <BellIcon className="h-4 w-4 mr-2" />
-              {t("settings.pwa.notifications.title")}
-            </Button>
-          )}
-
-        </div>
-
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
-

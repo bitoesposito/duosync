@@ -155,11 +155,117 @@
       "installing": "Installing...",
       "dismiss": "Not now"
     },
+    "setup": {
+      "title": "Welcome to DuoSync",
+      "description": "Set up the first profile and an access PIN to get started.",
+      "adminNameLabel": "Your Name",
+      "namePlaceholder": "Username",
+      "pinLabel": "Access PIN Code (6 digits)",
+      "pinPlaceholder": "123456",
+      "submit": "Get Started",
+      "errorPinLength": "PIN must be 6 digits",
+      "error": "Error during setup",
+      "success": "Setup completed!"
+    },
     "notifications": {
       "title": "Enable notifications",
       "description": "Receive notifications when your partner confirms appointments or when there are important updates.",
       "enable": "Enable",
       "dismiss": "Not now"
+    }
+  },
+  "usersManagement": {
+    "title": "User Management",
+    "description": "Add, edit, or remove users from the system.",
+    "manageUsers": "Manage users",
+    "addUser": "Add user",
+    "editUser": "Edit user",
+    "existingUsers": "Existing users",
+    "noUsers": "No users available",
+    "namePlaceholder": "User name",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirmDeleteTitle": "Delete user",
+    "confirmDeleteDescription": "Are you sure you want to delete this user? All associated appointments will be removed. This action cannot be undone.",
+    "delete": "Delete",
+    "messages": {
+      "createSuccess": "User created successfully",
+      "createError": "Error creating user",
+      "updateSuccess": "User updated successfully",
+      "updateError": "Error updating user",
+      "deleteSuccess": "User deleted successfully",
+      "deleteError": "Error deleting user"
+    }
+  },
+  "admin": {
+    "login": {
+      "title": "Admin Area",
+      "description": "Enter PIN to access",
+      "pinLabel": "Admin PIN",
+      "submit": "Login",
+      "error": "Invalid PIN",
+      "success": "Login successful"
+    },
+    "users": {
+      "title": "User Management",
+      "backToDashboard": "Back to Dashboard",
+      "listTitle": "Users",
+      "newUser": "New User",
+      "noUsers": "No users found",
+      "searchPlaceholder": "Search user...",
+      "openList": "Open users list",
+      "closeList": "Close users list",
+      "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page",
+        "of": "of"
+      },
+      "details": {
+        "editTitle": "Edit User",
+        "createTitle": "New User",
+        "id": "ID",
+        "createDescription": "Enter details for the new user",
+        "nameLabel": "Name",
+        "namePlaceholder": "User Name",
+        "save": "Save",
+        "update": "Update",
+        "delete": "Delete",
+        "welcomeTitle": "Welcome to User Management",
+        "welcomeDescription": "Click on \"New User\" to create a new user, or select an existing user from the list to edit or delete them.",
+        "appointmentsTitle": "Appointments",
+        "noAppointments": "No appointments found for this user.",
+        "days": "Days"
+      },
+      "deleteModal": {
+        "title": "Delete User",
+        "description": "Are you sure you want to delete {{name}}? This action is irreversible and will delete all appointments.",
+        "cancel": "Cancel",
+        "confirm": "Confirm Delete"
+      },
+      "messages": {
+        "createSuccess": "User created successfully",
+        "createError": "Error creating user",
+        "updateSuccess": "User updated successfully",
+        "updateError": "Error updating user",
+        "deleteSuccess": "User deleted successfully",
+        "deleteError": "Error deleting user"
+      },
+      "appointments": {
+        "createTitle": "New Appointment",
+        "listTitle": "Appointments",
+        "noAppointments": "No appointments found for this user",
+        "editTitle": "Edit Appointment",
+        "editDescription": "Modify the appointment details",
+        "edit": "Edit",
+        "createSuccess": "Appointment created successfully",
+        "createError": "Error creating appointment",
+        "updateSuccess": "Appointment updated successfully",
+        "updateError": "Error updating appointment",
+        "deleteSuccess": "Appointment deleted successfully",
+        "deleteError": "Error deleting appointment"
+      }
     }
   }
 }

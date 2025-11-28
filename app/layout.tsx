@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { IBM_Plex_Sans } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { I18nProvider } from "@/i18n";
@@ -8,26 +8,27 @@ import PWAOnboarding from "@/components/layout/pwa-onboarding";
 import "./globals.css";
 import Link from "next/link";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-ibm-plex-sans",
 });
 
 export const metadata: Metadata = {
   title: "DuoSync",
   description: "Sincronizza i tuoi impegni con il tuo partner",
   manifest: "/manifest.json",
-  themeColor: "#000000",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "DuoSync",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
 };
 
 export default function RootLayout({
@@ -38,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={ibmPlexSans.variable}
         suppressHydrationWarning
       >
         {/* 
@@ -56,7 +57,7 @@ export default function RootLayout({
               href="https://blog.vitoesposito.it"
               className="text-blue-600 hover:underline hover:text-blue-700"
             >
-              Visita il blog
+              visita il blog
             </Link>
           </span>
         </div>

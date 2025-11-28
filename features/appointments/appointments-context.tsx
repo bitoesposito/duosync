@@ -20,6 +20,7 @@ import {
   validateAppointmentSlot,
   fetchAppointments,
   saveAppointment,
+  updateAppointment as updateAppointmentApi,
   removeAppointment as removeAppointmentApi,
 } from "./services/appointments.service";
 import { useUsers } from "@/features/users";
@@ -139,6 +140,57 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
     [activeUser, t]
   );
 
+  const updateAppointment = useCallback(
+    async (id: string, updatedAppointment: Appointment) => {
+      if (!activeUser) {
+        toast.warning(t("toasts.selectUser.title"), {
+          description: t("toasts.selectUser.description"),
+        });
+        return;
+      }
+      
+      // Optimistic update
+      let originalAppointment: Appointment | undefined;
+      setAppointments((prev) => {
+        const index = prev.findIndex((appointment) => appointment.id === id);
+        if (index === -1) {
+          return prev;
+        }
+        originalAppointment = prev[index];
+        const next = [...prev];
+        next[index] = updatedAppointment;
+        return next;
+      });
+      
+      setPendingMutations((count) => count + 1);
+      
+      try {
+        await updateAppointmentApi(activeUser.id, id, updatedAppointment);
+        toast.success(t("toasts.updateSuccess.title") || t("admin.users.appointments.updateSuccess"));
+        // Reload appointments from database to ensure consistency
+        const updatedAppointments = await fetchAppointments(activeUser.id);
+        setAppointments(updatedAppointments);
+      } catch (error: unknown) {
+        console.error("Failed to update appointment:", error);
+        toast.error(t("toasts.updateError.title") || t("admin.users.appointments.updateError"));
+        // Revert optimistic update
+        if (originalAppointment) {
+          setAppointments((prev) => {
+            const next = [...prev];
+            const index = next.findIndex((appointment) => appointment.id === id);
+            if (index !== -1) {
+              next[index] = originalAppointment!;
+            }
+            return next;
+          });
+        }
+      } finally {
+        setPendingMutations((count) => Math.max(0, count - 1));
+      }
+    },
+    [activeUser, t]
+  );
+
   const removeAppointment = useCallback(
     (id: string) => {
       if (!activeUser) {
@@ -197,11 +249,12 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
     () => ({
       appointments,
       addAppointment,
+      updateAppointment,
       removeAppointment,
       isLoading,
       isSaving,
     }),
-    [appointments, addAppointment, removeAppointment, isLoading, isSaving]
+    [appointments, addAppointment, updateAppointment, removeAppointment, isLoading, isSaving]
   );
 
   return (

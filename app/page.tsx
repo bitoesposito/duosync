@@ -1,14 +1,22 @@
-import Header from "@/components/header/header";
 import Dashboard from "@/components/dashboard";
+import Header from "@/components/header/header";
 import { UsersProvider } from "@/features/users";
+import { isAppInitialized } from "@/lib/settings";
+import { redirect } from "next/navigation";
 
-export default function Home() {
+export default async function Home() {
+  const initialized = await isAppInitialized();
+  
+  if (!initialized) {
+    redirect("/onboarding");
+  }
+
   return (
-   <UsersProvider>
-    <div className="min-h-screen">
-      <Header />
-      <Dashboard />
-    </div>
-   </UsersProvider>
+    <UsersProvider>
+      <div className="min-h-screen">
+        <Header />
+        <Dashboard />
+      </div>
+    </UsersProvider>
   );
 }

@@ -1,6 +1,15 @@
 import { pgTable, serial, text, date, boolean, timestamp, integer } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
+// App settings table: stores global configuration (admin pin, initialization state)
+export const appSettings = pgTable("app_settings", {
+  id: integer("id").primaryKey().default(1), // Single row table
+  adminPin: text("adminPin").notNull(), // Hashed or plain (simple protection)
+  isInitialized: boolean("isInitialized").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
 // Users table: stores user profiles
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),

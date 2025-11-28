@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { UserProfile, UsersContextValue } from "@/types";
-import { fetchUsers } from "./services/users.service";
+import { fetchUsers, createUser, updateUser, deleteUser } from "./services/users.service";
 
 const ACTIVE_USER_STORAGE_KEY = "duosync.activeUserId";
 
@@ -82,6 +82,66 @@ export function UsersProvider({ children }: { children: ReactNode }) {
     [users]
   );
 
+  /**
+   * Reloads users from the API.
+   * Used after create, update, or delete operations.
+   */
+  const refreshUsers = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const usersData = await fetchUsers();
+      setUsers(usersData);
+
+      // If the active user was deleted, select the first available user
+      setActiveUserId((currentId) => {
+        if (currentId && !usersData.some((u) => u.id === currentId)) {
+          return usersData.length > 0 ? usersData[0].id : undefined;
+        }
+        return currentId;
+      });
+    } catch (error) {
+      console.error("Error refreshing users:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /**
+   * Creates a new user and refreshes the users list.
+   */
+  const handleCreateUser = useCallback(
+    async (name: string): Promise<UserProfile> => {
+      const newUser = await createUser(name);
+      await refreshUsers();
+      return newUser;
+    },
+    [refreshUsers]
+  );
+
+  /**
+   * Updates an existing user and refreshes the users list.
+   */
+  const handleUpdateUser = useCallback(
+    async (id: number, name: string): Promise<UserProfile> => {
+      const updatedUser = await updateUser(id, name);
+      await refreshUsers();
+      return updatedUser;
+    },
+    [refreshUsers]
+  );
+
+  /**
+   * Deletes a user and refreshes the users list.
+   * If the deleted user was active, selects the first available user.
+   */
+  const handleDeleteUser = useCallback(
+    async (id: number): Promise<void> => {
+      await deleteUser(id);
+      await refreshUsers();
+    },
+    [refreshUsers]
+  );
+
   const activeUser = useMemo(
     () => users.find((u) => u.id === activeUserId),
     [activeUserId, users]
@@ -92,9 +152,13 @@ export function UsersProvider({ children }: { children: ReactNode }) {
       users,
       activeUser,
       selectUser,
+      createUser: handleCreateUser,
+      updateUser: handleUpdateUser,
+      deleteUser: handleDeleteUser,
+      refreshUsers,
       isLoading,
     }),
-    [users, activeUser, selectUser, isLoading]
+    [users, activeUser, selectUser, handleCreateUser, handleUpdateUser, handleDeleteUser, refreshUsers, isLoading]
   );
 
   return <UsersContext.Provider value={value}>{children}</UsersContext.Provider>;

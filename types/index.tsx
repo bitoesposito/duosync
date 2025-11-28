@@ -109,6 +109,7 @@ export type TimelineSegment = {
 export type AppointmentsContextValue = {
   appointments: Appointment[];
   addAppointment: (data: AppointmentFormData) => void;
+  updateAppointment: (id: string, appointment: Appointment) => Promise<void>;
   removeAppointment: (id: string) => void;
   isLoading: boolean;
   isSaving: boolean;
@@ -121,6 +122,10 @@ export type UsersContextValue = {
   users: UserProfile[];
   activeUser?: UserProfile;
   selectUser: (userId: number) => void;
+  createUser: (name: string) => Promise<UserProfile>;
+  updateUser: (id: number, name: string) => Promise<UserProfile>;
+  deleteUser: (id: number) => Promise<void>;
+  refreshUsers: () => Promise<void>;
   isLoading: boolean;
 };
 

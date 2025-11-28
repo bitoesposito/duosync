@@ -117,6 +117,37 @@ export async function listAppointmentsFromDb(
 }
 
 /**
+ * Fetches all appointments for a specific user.
+ * Used for admin panel to show user's appointments.
+ */
+export async function getUserAppointmentsFromDb(userId: number): Promise<Appointment[]> {
+  const { db, schema } = await import("@/lib/db");
+  const { eq, desc } = await import("drizzle-orm");
+  
+  const oneTime = await db.select().from(schema.appointments)
+    .where(eq(schema.appointments.userId, userId))
+    .orderBy(desc(schema.appointments.date));
+    
+  const recurring = await db.select().from(schema.recurringAppointments)
+    .where(eq(schema.recurringAppointments.userId, userId));
+    
+  const mappedOneTime = oneTime.map(mapDbAppointmentToDomain);
+  
+  // For recurring templates in admin list, we map them directly
+  const mappedRecurring = recurring.map(row => ({
+    id: row.id,
+    startTime: row.startTime,
+    endTime: row.endTime,
+    category: row.category as Appointment["category"],
+    description: row.description ?? undefined,
+    isRepeating: true,
+    repeatDays: (row.repeatDays ?? []) as Appointment["repeatDays"],
+  }));
+  
+  return [...mappedOneTime, ...mappedRecurring];
+}
+
+/**
  * Creates a new appointment in the database.
  * If isRepeating is true, saves to recurring_appointments table.
  * Otherwise, saves to appointments table with the specified date (defaults to today).
@@ -275,6 +306,85 @@ export async function deleteAppointmentFromDb(
     }
   } catch (error) {
     console.error("Error deleting appointment from database:", error);
+    throw error;
+  }
+}
+
+/**
+ * Updates an appointment in the database.
+ * Handles both one-time appointments and recurring appointments.
+ * 
+ * For recurring appointments:
+ * - Updates the recurring appointment template
+ * - Note: This updates all instances of the recurring appointment
+ * 
+ * For one-time appointments:
+ * - Updates the appointment directly in the appointments table.
+ * 
+ * Used exclusively by API routes (server-side only).
+ */
+export async function updateAppointmentInDb(
+  userId: number,
+  appointmentId: string,
+  updatedAppointment: Appointment
+): Promise<void> {
+  // Dynamic import to avoid bundling db code in client
+  const { db, schema } = await import("@/lib/db");
+  const { eq, and } = await import("drizzle-orm");
+
+  try {
+    // Check if it's a recurring appointment (format: "originalId-YYYY-MM-DD")
+    const parts = appointmentId.split("-");
+    const hasDateSuffix = parts.length >= 4;
+
+    if (hasDateSuffix) {
+      // Try to parse the last 3 parts as a date (YYYY-MM-DD)
+      const potentialDate = parts.slice(-3).join("-");
+      const dateMatch = potentialDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      
+      if (dateMatch) {
+        // This is a recurring appointment instance
+        // We update the recurring template, not the instance
+        const recurringId = parts.slice(0, -3).join("-");
+        
+        await db
+          .update(schema.recurringAppointments)
+          .set({
+            startTime: updatedAppointment.startTime,
+            endTime: updatedAppointment.endTime,
+            category: updatedAppointment.category,
+            description: updatedAppointment.description,
+            repeatDays: updatedAppointment.repeatDays,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(schema.recurringAppointments.id, recurringId),
+              eq(schema.recurringAppointments.userId, userId)
+            )
+          );
+        return;
+      }
+    }
+
+    // One-time appointment - update directly
+    await db
+      .update(schema.appointments)
+      .set({
+        startTime: updatedAppointment.startTime,
+        endTime: updatedAppointment.endTime,
+        category: updatedAppointment.category,
+        description: updatedAppointment.description,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(schema.appointments.id, appointmentId),
+          eq(schema.appointments.userId, userId)
+        )
+      );
+  } catch (error) {
+    console.error("Error updating appointment in database:", error);
     throw error;
   }
 }

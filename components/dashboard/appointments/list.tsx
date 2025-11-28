@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/tooltip";
 import { ClockIcon, CheckIcon } from "lucide-react";
 import AppointmentsListItem from "./list-item";
+import AppointmentEditDialog from "./appointment-edit-dialog";
 import { useAppointments } from "@/features/appointments";
 import { useI18n } from "@/i18n";
 import { useNotifications } from "@/hooks";
@@ -28,11 +29,12 @@ function sortByStartTime(a: Appointment, b: Appointment): number {
 
 // Appointment list that consumes the context directly without parent props.
 export default function AppointmentsList() {
-  const { appointments, removeAppointment, isLoading, isSaving } =
+  const { appointments, updateAppointment, removeAppointment, isLoading, isSaving } =
     useAppointments();
   const { t } = useI18n();
   const { isSupported, permission, requestPermission, notify, isReady } =
     useNotifications();
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const hasAppointments = appointments.length > 0;
   const confirmDisabled = !hasAppointments || isLoading || isSaving;
 
@@ -145,6 +147,7 @@ export default function AppointmentsList() {
                   <AppointmentsListItem
                     key={appointment.id}
                     appointment={appointment}
+                    onEdit={() => setEditingAppointment(appointment)}
                     onRemove={() => removeAppointment(appointment.id)}
                     disabled={isSaving}
                   />
@@ -166,6 +169,7 @@ export default function AppointmentsList() {
                   <AppointmentsListItem
                     key={appointment.id}
                     appointment={appointment}
+                    onEdit={() => setEditingAppointment(appointment)}
                     onRemove={() => removeAppointment(appointment.id)}
                     disabled={isSaving}
                   />
@@ -175,6 +179,18 @@ export default function AppointmentsList() {
           )}
         </div>
       )}
+
+      <AppointmentEditDialog
+        appointment={editingAppointment}
+        open={editingAppointment !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingAppointment(null);
+        }}
+        onSave={async (appointmentId, updatedAppointment) => {
+          await updateAppointment(appointmentId, updatedAppointment);
+        }}
+        existingAppointments={appointments}
+      />
     </section>
   );
 }

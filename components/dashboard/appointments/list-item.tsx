@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { TrashIcon, RepeatIcon } from "lucide-react";
+import { TrashIcon, RepeatIcon, PencilIcon } from "lucide-react";
 import { Appointment, DayId } from "@/types";
 import { useI18n } from "@/i18n";
 
@@ -8,14 +8,18 @@ type AppointmentsListItemProps = {
   appointment: Appointment;
   // Callback to remove the current appointment
   onRemove?: () => void;
+  // Callback to edit the current appointment (optional, for admin section)
+  onEdit?: () => void;
   // Whether destructive actions are temporarily disabled
   disabled?: boolean;
 };
 
 // List item that renders a single appointment with formatted meta data.
+// Supports both dashboard (remove only) and admin (edit + remove) modes.
 export default function AppointmentsListItem({
   appointment,
   onRemove,
+  onEdit,
   disabled = false,
 }: AppointmentsListItemProps) {
   const { startTime, endTime, category, description, isRepeating, repeatDays } =
@@ -69,18 +73,35 @@ export default function AppointmentsListItem({
         </div>
       </div>
 
-      {onRemove && (
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          aria-label={t("list.removeAriaLabel")}
-          className="text-muted-foreground hover:text-destructive hover:bg-transparent rounded-none h-6 w-6 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0 cursor-pointer disabled:opacity-50"
-          onClick={onRemove}
-          disabled={disabled}
-        >
-          <TrashIcon className="w-3.5 h-3.5" />
-        </Button>
+      {(onEdit || onRemove) && (
+        <div className="flex items-center gap-1 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+          {onEdit && (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              aria-label={t("admin.users.appointments.edit")}
+              className="text-muted-foreground hover:text-foreground hover:bg-transparent rounded-none h-6 w-6 cursor-pointer disabled:opacity-50"
+              onClick={onEdit}
+              disabled={disabled}
+            >
+              <PencilIcon className="w-3.5 h-3.5" />
+            </Button>
+          )}
+          {onRemove && (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              aria-label={t("list.removeAriaLabel")}
+              className="text-muted-foreground hover:text-destructive hover:bg-transparent rounded-none h-6 w-6 cursor-pointer disabled:opacity-50"
+              onClick={onRemove}
+              disabled={disabled}
+            >
+              <TrashIcon className="w-3.5 h-3.5" />
+            </Button>
+          )}
+        </div>
       )}
     </article>
   );

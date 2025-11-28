@@ -183,3 +183,28 @@ export async function removeAppointment(
     throw new Error("Failed to remove appointment");
   }
 }
+
+/**
+ * Updates an appointment via API route.
+ * Called from browser → calls PUT /api/appointments/update → which uses updateAppointmentInDb()
+ * @param userId - The user ID that owns the appointment
+ * @param appointmentId - The ID of the appointment to update
+ * @param appointment - The updated appointment data
+ * @returns Promise that resolves when the appointment is updated
+ * @throws Error if the request fails
+ */
+export async function updateAppointment(
+  userId: number,
+  appointmentId: string,
+  appointment: Appointment
+): Promise<void> {
+  const response = await fetch(`/api/appointments/update`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, appointmentId, appointment }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update appointment");
+  }
+}

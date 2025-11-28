@@ -154,11 +154,117 @@
       "installing": "Installazione...",
       "dismiss": "Non ora"
     },
+    "setup": {
+      "title": "Benvenuto su DuoSync",
+      "description": "Configura il primo profilo e un PIN di accesso per iniziare.",
+      "adminNameLabel": "Il tuo nome",
+      "namePlaceholder": "Nome utente",
+      "pinLabel": "Codice PIN di accesso (6 cifre)",
+      "pinPlaceholder": "123456",
+      "submit": "Inizia",
+      "errorPinLength": "Il PIN deve essere di 6 cifre",
+      "error": "Errore durante la configurazione",
+      "success": "Configurazione completata!"
+    },
     "notifications": {
       "title": "Abilita le notifiche",
       "description": "Ricevi notifiche quando il tuo partner conferma gli impegni o quando ci sono aggiornamenti importanti.",
       "enable": "Abilita",
       "dismiss": "Non ora"
+    }
+  },
+  "usersManagement": {
+    "title": "Gestione Utenti",
+    "description": "Aggiungi, modifica o rimuovi utenti dal sistema.",
+    "manageUsers": "Gestisci utenti",
+    "addUser": "Aggiungi utente",
+    "editUser": "Modifica utente",
+    "existingUsers": "Utenti esistenti",
+    "noUsers": "Nessun utente disponibile",
+    "namePlaceholder": "Nome utente",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "close": "Chiudi",
+    "confirmDeleteTitle": "Elimina utente",
+    "confirmDeleteDescription": "Sei sicuro di voler eliminare questo utente? Tutti gli impegni associati verranno rimossi. Questa azione non può essere annullata.",
+    "delete": "Elimina",
+    "messages": {
+      "createSuccess": "Utente creato con successo",
+      "createError": "Errore nella creazione dell'utente",
+      "updateSuccess": "Utente aggiornato con successo",
+      "updateError": "Errore nell'aggiornamento dell'utente",
+      "deleteSuccess": "Utente eliminato con successo",
+      "deleteError": "Errore nell'eliminazione dell'utente"
+    }
+  },
+  "admin": {
+    "login": {
+      "title": "Area Admin",
+      "description": "Inserisci il PIN per accedere",
+      "pinLabel": "PIN Admin",
+      "submit": "Accedi",
+      "error": "PIN non valido",
+      "success": "Accesso effettuato"
+    },
+    "users": {
+      "title": "Gestione Utenti",
+      "backToDashboard": "Torna alla Dashboard",
+      "listTitle": "Utenti",
+      "newUser": "Nuovo Utente",
+      "noUsers": "Nessun utente trovato",
+      "searchPlaceholder": "Cerca utente...",
+      "openList": "Apri lista utenti",
+      "closeList": "Chiudi lista utenti",
+      "pagination": {
+        "previous": "Precedente",
+        "next": "Successivo",
+        "page": "Pagina",
+        "of": "di"
+      },
+      "details": {
+        "editTitle": "Modifica Utente",
+        "createTitle": "Nuovo Utente",
+        "id": "ID",
+        "createDescription": "Inserisci i dettagli del nuovo utente",
+        "nameLabel": "Nome",
+        "namePlaceholder": "Nome Utente",
+        "save": "Salva",
+        "update": "Aggiorna",
+        "delete": "Elimina",
+        "welcomeTitle": "Benvenuto nella Gestione Utenti",
+        "welcomeDescription": "Clicca su \"Nuovo Utente\" per creare un nuovo utente, oppure seleziona un utente esistente dalla lista per modificarlo o eliminarlo.",
+        "appointmentsTitle": "Impegni",
+        "noAppointments": "Nessun impegno trovato per questo utente.",
+        "days": "Giorni"
+      },
+      "deleteModal": {
+        "title": "Elimina Utente",
+        "description": "Sei sicuro di voler eliminare {{name}}? Questa azione è irreversibile e cancellerà anche tutti gli impegni.",
+        "cancel": "Annulla",
+        "confirm": "Conferma Eliminazione"
+      },
+      "messages": {
+        "createSuccess": "Utente creato con successo",
+        "createError": "Errore nella creazione dell'utente",
+        "updateSuccess": "Utente aggiornato con successo",
+        "updateError": "Errore nell'aggiornamento dell'utente",
+        "deleteSuccess": "Utente eliminato con successo",
+        "deleteError": "Errore nell'eliminazione dell'utente"
+      },
+      "appointments": {
+        "createTitle": "Nuovo Impegno",
+        "listTitle": "Impegni",
+        "noAppointments": "Nessun impegno trovato per questo utente",
+        "editTitle": "Modifica Impegno",
+        "editDescription": "Modifica i dettagli dell'impegno",
+        "edit": "Modifica",
+        "createSuccess": "Impegno creato con successo",
+        "createError": "Errore nella creazione dell'impegno",
+        "updateSuccess": "Impegno aggiornato con successo",
+        "updateError": "Errore nell'aggiornamento dell'impegno",
+        "deleteSuccess": "Impegno eliminato con successo",
+        "deleteError": "Errore nell'eliminazione dell'impegno"
+      }
     }
   }
 }

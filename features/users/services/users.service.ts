@@ -27,3 +27,73 @@ export async function fetchUsers(): Promise<UserProfile[]> {
   const data = (await response.json()) as { users: UserProfile[] };
   return data.users || [];
 }
+
+/**
+ * Creates a new user in the database via API.
+ * @param name - The name of the user to create
+ * @returns Promise resolving to the created user profile
+ * @throws Error if the request fails
+ */
+export async function createUser(name: string): Promise<UserProfile> {
+  const response = await fetch("/api/users", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name }),
+  });
+
+  if (!response.ok) {
+    const error = (await response.json()) as { error?: string };
+    throw new Error(error.error || "Failed to create user");
+  }
+
+  const data = (await response.json()) as { user: UserProfile };
+  return data.user;
+}
+
+/**
+ * Updates an existing user in the database via API.
+ * @param id - The ID of the user to update
+ * @param name - The new name for the user
+ * @returns Promise resolving to the updated user profile
+ * @throws Error if the request fails
+ */
+export async function updateUser(id: number, name: string): Promise<UserProfile> {
+  const response = await fetch("/api/users", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ id, name }),
+  });
+
+  if (!response.ok) {
+    const error = (await response.json()) as { error?: string };
+    throw new Error(error.error || "Failed to update user");
+  }
+
+  const data = (await response.json()) as { user: UserProfile };
+  return data.user;
+}
+
+/**
+ * Deletes a user from the database via API.
+ * @param id - The ID of the user to delete
+ * @returns Promise resolving when the deletion is complete
+ * @throws Error if the request fails
+ */
+export async function deleteUser(id: number): Promise<void> {
+  const response = await fetch("/api/users", {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ id }),
+  });
+
+  if (!response.ok) {
+    const error = (await response.json()) as { error?: string };
+    throw new Error(error.error || "Failed to delete user");
+  }
+}
