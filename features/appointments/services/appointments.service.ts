@@ -139,6 +139,44 @@ export async function fetchAppointments(
 }
 
 /**
+ * Fetches appointments for multiple users in parallel via batch API route.
+ * Optimized endpoint that loads appointments for all users in a single request.
+ * Called from browser → calls GET /api/appointments/batch → which uses listAppointmentsBatchFromDb()
+ * @param userIds - Array of user IDs to fetch appointments for
+ * @param date - Optional date in YYYY-MM-DD format (defaults to today)
+ * @returns Promise resolving to a map of userId to appointments array
+ * @throws Error if the request fails
+ */
+export async function fetchAppointmentsBatch(
+  userIds: number[],
+  date?: string
+): Promise<Record<number, Appointment[]>> {
+  if (userIds.length === 0) {
+    return {};
+  }
+
+  const params = new URLSearchParams({
+    userIds: userIds.join(","),
+  });
+  if (date) {
+    params.append("date", date);
+  }
+
+  const response = await fetch(`/api/appointments/batch?${params.toString()}`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load appointments batch");
+  }
+
+  const payload = (await response.json()) as {
+    appointmentsByUser: Record<number, Appointment[]>;
+  };
+  return payload.appointmentsByUser;
+}
+
+/**
  * Saves a new appointment via API route.
  * Called from browser → calls POST /api/appointments/add → which uses createAppointmentInDb()
  * @param userId - The user ID to create the appointment for
@@ -182,6 +220,30 @@ export async function removeAppointment(
   if (!response.ok) {
     throw new Error("Failed to remove appointment");
   }
+}
+
+/**
+ * Fetches all recurring appointment templates for a specific user via API route.
+ * Returns all recurring templates, not filtered by date.
+ * @param userId - The user ID to fetch recurring templates for
+ * @returns Promise resolving to an array of recurring appointment templates
+ * @throws Error if the request fails
+ */
+export async function fetchRecurringTemplates(
+  userId: number
+): Promise<Appointment[]> {
+  const params = new URLSearchParams({ userId: String(userId) });
+
+  const response = await fetch(`/api/appointments/recurring?${params.toString()}`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load recurring templates");
+  }
+
+  const payload = (await response.json()) as { recurringTemplates: Appointment[] };
+  return payload.recurringTemplates;
 }
 
 /**

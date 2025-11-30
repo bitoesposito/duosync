@@ -117,6 +117,125 @@ export async function listAppointmentsFromDb(
 }
 
 /**
+ * Fetches all recurring appointment templates for a specific user (not filtered by date).
+ * Used to show all recurring appointments in the list, even if they're not active today.
+ * @param userId - The user ID to fetch recurring templates for
+ * @returns Promise resolving to an array of recurring appointment templates
+ */
+export async function getAllRecurringTemplatesFromDb(
+  userId: number
+): Promise<Appointment[]> {
+  // Dynamic import to avoid bundling db code in client
+  const { db, schema } = await import("@/lib/db");
+  const { eq } = await import("drizzle-orm");
+
+  try {
+    // Fetch all recurring appointments for this user (no date filter)
+    const recurringAppointments = await db
+      .select()
+      .from(schema.recurringAppointments)
+      .where(eq(schema.recurringAppointments.userId, userId));
+
+    // Map to domain types (use today's date for the mapping, but these are templates)
+    const today = new Date().toISOString().split("T")[0];
+    return recurringAppointments.map((row) => ({
+      id: row.id, // Use original ID (not date-suffixed) to identify the template
+      startTime: row.startTime,
+      endTime: row.endTime,
+      category: row.category as Appointment["category"],
+      description: row.description ?? undefined,
+      isRepeating: true,
+      repeatDays: (row.repeatDays ?? []) as Appointment["repeatDays"],
+    }));
+  } catch (error) {
+    console.error("Error fetching recurring templates from database:", error);
+    return [];
+  }
+}
+
+/**
+ * Fetches appointments for multiple users in parallel.
+ * Returns a map of userId -> Appointment[] for efficient lookup.
+ * Used by batch API endpoint to load appointments for multiple users simultaneously.
+ * @param userIds - Array of user IDs to fetch appointments for
+ * @param date - Optional date in YYYY-MM-DD format (defaults to today)
+ * @returns Promise resolving to a map of userId to appointments array
+ */
+export async function listAppointmentsBatchFromDb(
+  userIds: number[],
+  date?: string
+): Promise<Record<number, Appointment[]>> {
+  // Dynamic import to avoid bundling db code in client
+  const { db, schema } = await import("@/lib/db");
+  const { eq, and, inArray } = await import("drizzle-orm");
+
+  try {
+    if (userIds.length === 0) {
+      return {};
+    }
+
+    const targetDate = date || new Date().toISOString().split("T")[0];
+    const dayOfWeek = getDayOfWeek(targetDate);
+
+    // Fetch one-time appointments for all users in parallel (single query)
+    const oneTimeAppointments = await db
+      .select()
+      .from(schema.appointments)
+      .where(
+        and(
+          inArray(schema.appointments.userId, userIds),
+          eq(schema.appointments.date, targetDate)
+        )
+      );
+
+    // Fetch all recurring appointments for all users (no date filter in DB)
+    const recurringAppointments = await db
+      .select()
+      .from(schema.recurringAppointments)
+      .where(inArray(schema.recurringAppointments.userId, userIds));
+
+    // Filter in JavaScript to check if dayOfWeek is in repeatDays array
+    const matchingRecurring = recurringAppointments.filter((row) =>
+      row.repeatDays?.includes(dayOfWeek)
+    );
+
+    // Group appointments by userId
+    const result: Record<number, Appointment[]> = {};
+    
+    // Initialize empty arrays for all userIds
+    userIds.forEach((userId) => {
+      result[userId] = [];
+    });
+
+    // Map and group one-time appointments
+    oneTimeAppointments.forEach((row) => {
+      const appointment = mapDbAppointmentToDomain(row);
+      if (result[row.userId]) {
+        result[row.userId].push(appointment);
+      }
+    });
+
+    // Map and group recurring appointments
+    matchingRecurring.forEach((row) => {
+      const appointment = mapRecurringAppointmentToDomain(row, targetDate);
+      if (result[row.userId]) {
+        result[row.userId].push(appointment);
+      }
+    });
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching appointments batch from database:", error);
+    // Return empty arrays for all userIds on error
+    const result: Record<number, Appointment[]> = {};
+    userIds.forEach((userId) => {
+      result[userId] = [];
+    });
+    return result;
+  }
+}
+
+/**
  * Fetches all appointments for a specific user.
  * Used for admin panel to show user's appointments.
  */

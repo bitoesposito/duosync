@@ -19,6 +19,8 @@ import {
   createAppointment,
   validateAppointmentSlot,
   fetchAppointments,
+  fetchAppointmentsBatch,
+  fetchRecurringTemplates,
   saveAppointment,
   updateAppointment as updateAppointmentApi,
   removeAppointment as removeAppointmentApi,
@@ -36,9 +38,11 @@ const AppointmentsContext = createContext<AppointmentsContextValue | undefined>(
  * The context is keyed by user ID to reset state when switching users.
  */
 export function AppointmentsProvider({ children }: { children: ReactNode }) {
-  const { activeUser } = useUsers();
+  const { activeUser, users } = useUsers();
   const { t } = useI18n();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [recurringTemplates, setRecurringTemplates] = useState<Appointment[]>([]);
+  const [otherUserAppointments, setOtherUserAppointments] = useState<Appointment[] | undefined>(undefined);
   const [loadedUserId, setLoadedUserId] = useState<number | null>(null);
   const [pendingMutations, setPendingMutations] = useState(0);
   const isSaving = pendingMutations > 0;
@@ -51,16 +55,39 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
     }
     let cancelled = false;
 
-    fetchAppointments(activeUser.id)
-      .then((data) => {
-        if (!cancelled) {
-          setAppointments(data);
-        }
-      })
+    // Load active appointments for today and all recurring templates in parallel
+    const otherUser = users.find((u) => u.id !== activeUser.id);
+    
+    // Fetch active appointments (for today)
+    const activeAppointmentsPromise = otherUser?.id
+      ? fetchAppointmentsBatch([activeUser.id, otherUser.id]).then((data) => {
+          if (!cancelled) {
+            setAppointments(data[activeUser.id] || []);
+            setOtherUserAppointments(data[otherUser.id] || []);
+          }
+        })
+      : fetchAppointments(activeUser.id).then((data) => {
+          if (!cancelled) {
+            setAppointments(data);
+            setOtherUserAppointments(undefined);
+          }
+        });
+
+    // Fetch all recurring templates (not filtered by date)
+    const recurringTemplatesPromise = fetchRecurringTemplates(activeUser.id).then((data) => {
+      if (!cancelled) {
+        setRecurringTemplates(data);
+      }
+    });
+
+    // Wait for both to complete
+    Promise.all([activeAppointmentsPromise, recurringTemplatesPromise])
       .catch((error) => {
         if (!cancelled) {
           console.error("Error loading appointments:", error);
           setAppointments([]);
+          setRecurringTemplates([]);
+          setOtherUserAppointments(undefined);
           toast.error(t("toasts.loadError.title"), {
             description: t("toasts.loadError.description"),
           });
@@ -73,7 +100,7 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [activeUser?.id, t]);
+  }, [activeUser?.id, users, t]);
 
   const addAppointment = useCallback(
     (data: AppointmentFormData) => {
@@ -115,14 +142,21 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
       }
 
       setPendingMutations((count) => count + 1);
-      saveAppointment(activeUser.id, appointment)
+      const appointmentToSave = appointment;
+      saveAppointment(activeUser.id, appointmentToSave)
         .then(() => {
           toast.success(t("toasts.saveSuccess.title"), {
             description: t("toasts.saveSuccess.description", {
-              start: appointment!.startTime,
-              end: appointment!.endTime,
+              start: appointmentToSave.startTime,
+              end: appointmentToSave.endTime,
             }),
           });
+          // If it's a recurring appointment, reload recurring templates
+          if (appointmentToSave.isRepeating) {
+            return fetchRecurringTemplates(activeUser.id).then((templates) => {
+              setRecurringTemplates(templates);
+            });
+          }
         })
         .catch((error: unknown) => {
           console.error("Failed to save appointment:", error);
@@ -130,7 +164,7 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
             description: t("toasts.saveError.description"),
           });
           setAppointments((prev) =>
-            prev.filter((item) => item.id !== appointment!.id)
+            prev.filter((item) => item.id !== appointmentToSave.id)
           );
         })
         .finally(() => {
@@ -167,9 +201,13 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
       try {
         await updateAppointmentApi(activeUser.id, id, updatedAppointment);
         toast.success(t("toasts.updateSuccess.title") || t("admin.users.appointments.updateSuccess"));
-        // Reload appointments from database to ensure consistency
-        const updatedAppointments = await fetchAppointments(activeUser.id);
+        // Reload appointments and recurring templates from database to ensure consistency
+        const [updatedAppointments, updatedTemplates] = await Promise.all([
+          fetchAppointments(activeUser.id),
+          fetchRecurringTemplates(activeUser.id),
+        ]);
         setAppointments(updatedAppointments);
+        setRecurringTemplates(updatedTemplates);
       } catch (error: unknown) {
         console.error("Failed to update appointment:", error);
         toast.error(t("toasts.updateError.title") || t("admin.users.appointments.updateError"));
@@ -215,12 +253,16 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
       removeAppointmentApi(activeUser.id, id)
         .then(() => {
           toast.success(t("toasts.deleteSuccess.title"));
-          // Reload appointments from database to ensure consistency
+          // Reload appointments and recurring templates from database to ensure consistency
           // This is especially important for recurring appointments where we only remove a day
-          return fetchAppointments(activeUser.id);
+          return Promise.all([
+            fetchAppointments(activeUser.id),
+            fetchRecurringTemplates(activeUser.id),
+          ]);
         })
-        .then((updatedAppointments) => {
+        .then(([updatedAppointments, updatedTemplates]) => {
           setAppointments(updatedAppointments);
+          setRecurringTemplates(updatedTemplates);
         })
         .catch((error: unknown) => {
           console.error("Failed to delete appointment:", error);
@@ -248,13 +290,15 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppointmentsContextValue>(
     () => ({
       appointments,
+      recurringTemplates,
+      otherUserAppointments,
       addAppointment,
       updateAppointment,
       removeAppointment,
       isLoading,
       isSaving,
     }),
-    [appointments, addAppointment, updateAppointment, removeAppointment, isLoading, isSaving]
+    [appointments, recurringTemplates, otherUserAppointments, addAppointment, updateAppointment, removeAppointment, isLoading, isSaving]
   );
 
   return (

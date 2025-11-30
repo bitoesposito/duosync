@@ -71,7 +71,8 @@
     "confirmTooltip": "Send a request to the other user to approve these slots",
     "empty": "No appointments yet.",
     "loading": "Loading appointments...",
-    "removeAriaLabel": "Remove appointment"
+    "removeAriaLabel": "Remove appointment",
+    "inactiveRecurring": "Recurring (not active today) ({{count}})"
   },
   "availability": {
     "title": "Availability",

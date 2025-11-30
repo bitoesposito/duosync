@@ -107,7 +107,9 @@ export type TimelineSegment = {
  * Value exposed by the AppointmentsContext to components.
  */
 export type AppointmentsContextValue = {
-  appointments: Appointment[];
+  appointments: Appointment[]; // Active appointments for today (one-time + recurring active today)
+  recurringTemplates: Appointment[]; // All recurring templates (not filtered by date)
+  otherUserAppointments?: Appointment[]; // Appointments for the other user (when available from batch fetch)
   addAppointment: (data: AppointmentFormData) => void;
   updateAppointment: (id: string, appointment: Appointment) => Promise<void>;
   removeAppointment: (id: string) => void;

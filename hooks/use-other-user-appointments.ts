@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
-import { fetchAppointments } from "@/features/appointments";
+import { useAppointments, fetchAppointments } from "@/features/appointments";
 import { Appointment } from "@/types";
 
 /**
  * Hook to fetch and manage the other user's appointments.
  * Used by availability grid to compare availability between users.
+ * 
+ * Optimized: Uses appointments from context if available (from batch fetch),
+ * otherwise falls back to individual fetch.
  */
 export function useOtherUserAppointments(otherUserId: number | undefined) {
+  const { otherUserAppointments, isLoading: isLoadingContext } = useAppointments();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -16,6 +20,13 @@ export function useOtherUserAppointments(otherUserId: number | undefined) {
       return;
     }
 
+    // If appointments are available from context (batch fetch), use them
+    if (otherUserAppointments !== undefined) {
+      setAppointments(otherUserAppointments);
+      return;
+    }
+
+    // Otherwise, fetch individually (fallback for edge cases)
     let cancelled = false;
     setIsLoading(true);
 
@@ -40,8 +51,11 @@ export function useOtherUserAppointments(otherUserId: number | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [otherUserId]);
+  }, [otherUserId, otherUserAppointments]);
 
-  return { appointments, isLoading };
+  // Loading state: true if context is loading OR if we're doing individual fetch
+  const isLoadingCombined = isLoadingContext || isLoading;
+
+  return { appointments, isLoading: isLoadingCombined };
 }
 

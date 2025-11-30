@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { SparklesIcon, UserIcon } from "lucide-react";
 import {
   buildTimelineSegments,
@@ -43,13 +44,23 @@ export default function AvailabilityGrid() {
   const { appointments: otherUserAppointments, isLoading: isLoadingOther } =
     useOtherUserAppointments(otherUser?.id);
 
-  const personalSegments = buildTimelineSegments(appointments);
-  const allSharedSegments =
-    otherUser && !isLoadingOther
-      ? buildSharedTimelineSegments(appointments, otherUserAppointments)
-      : [];
-  const sharedSegments = allSharedSegments.filter(
-    (segment) => segment.category === "match"
+  // Memoize timeline segments to avoid recalculating on every render
+  const personalSegments = useMemo(
+    () => buildTimelineSegments(appointments),
+    [appointments]
+  );
+
+  const allSharedSegments = useMemo(
+    () =>
+      otherUser && !isLoadingOther
+        ? buildSharedTimelineSegments(appointments, otherUserAppointments)
+        : [],
+    [otherUser, isLoadingOther, appointments, otherUserAppointments]
+  );
+
+  const sharedSegments = useMemo(
+    () => allSharedSegments.filter((segment) => segment.category === "match"),
+    [allSharedSegments]
   );
 
   const isLoadingGrid = isLoading || isLoadingOther;

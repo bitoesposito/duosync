@@ -71,7 +71,8 @@
     "confirmTooltip": "Invia una richiesta all'altro utente per confermare gli impegni",
     "empty": "Nessun impegno aggiunto.",
     "loading": "Caricamento impegni in corso...",
-    "removeAriaLabel": "Elimina impegno"
+    "removeAriaLabel": "Elimina impegno",
+    "inactiveRecurring": "Ricorrenti (non attivi oggi) ({{count}})"
   },
   "availability": {
     "title": "Disponibilità",

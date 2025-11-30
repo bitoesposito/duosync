@@ -6,7 +6,7 @@ import {
   TooltipContent,
   TooltipProvider,
 } from "@/components/ui/tooltip";
-import { ClockIcon, CheckIcon } from "lucide-react";
+import { ClockIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import AppointmentsListItem from "./list-item";
 import AppointmentEditDialog from "./appointment-edit-dialog";
 import { useAppointments } from "@/features/appointments";
@@ -29,12 +29,13 @@ function sortByStartTime(a: Appointment, b: Appointment): number {
 
 // Appointment list that consumes the context directly without parent props.
 export default function AppointmentsList() {
-  const { appointments, updateAppointment, removeAppointment, isLoading, isSaving } =
+  const { appointments, recurringTemplates, updateAppointment, removeAppointment, isLoading, isSaving } =
     useAppointments();
   const { t } = useI18n();
   const { isSupported, permission, requestPermission, notify, isReady } =
     useNotifications();
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
+  const [showInactiveRecurring, setShowInactiveRecurring] = useState(false);
   const hasAppointments = appointments.length > 0;
   const confirmDisabled = !hasAppointments || isLoading || isSaving;
 
@@ -73,9 +74,33 @@ export default function AppointmentsList() {
   };
 
   // Separate and sort appointments by category
-  const { sleepAppointments, otherAppointments } = useMemo(() => {
+  const { sleepAppointments, otherAppointments, inactiveRecurringTemplates } = useMemo(() => {
     const sleep: Appointment[] = [];
     const other: Appointment[] = [];
+
+    // Get active appointment IDs (recurring active today have format: {templateId}-{date})
+    const activeRecurringIds = new Set(
+      appointments
+        .filter((apt) => apt.isRepeating)
+        .map((apt) => {
+          // Extract template ID from date-suffixed ID (format: {templateId}-{date})
+          const parts = apt.id.split("-");
+          if (parts.length >= 4) {
+            // Check if last 3 parts form a date (YYYY-MM-DD)
+            const potentialDate = parts.slice(-3).join("-");
+            if (potentialDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              return parts.slice(0, -3).join("-");
+            }
+          }
+          return apt.id;
+        })
+    );
+
+    // Filter out recurring templates that are already active today
+    // Handle case where recurringTemplates might be undefined
+    const inactiveRecurring = (recurringTemplates || []).filter(
+      (template) => !activeRecurringIds.has(template.id)
+    );
 
     appointments.forEach((appointment) => {
       if (appointment.category === "sleep") {
@@ -88,12 +113,14 @@ export default function AppointmentsList() {
     // Sort both lists by start time
     sleep.sort(sortByStartTime);
     other.sort(sortByStartTime);
+    inactiveRecurring.sort(sortByStartTime);
 
     return {
       sleepAppointments: sleep,
       otherAppointments: other,
+      inactiveRecurringTemplates: inactiveRecurring,
     };
-  }, [appointments]);
+  }, [appointments, recurringTemplates]);
 
   return (
     <section className="w-full flex flex-col gap-4">
@@ -128,7 +155,7 @@ export default function AppointmentsList() {
             {t("list.loading")}
           </p>
         </div>
-      ) : !hasAppointments ? (
+      ) : !hasAppointments && inactiveRecurringTemplates.length === 0 ? (
         <div className="py-12 border border-dashed border-border bg-muted/5 text-center">
           <p className="text-sm text-muted-foreground">
             {t("list.empty")}
@@ -136,6 +163,14 @@ export default function AppointmentsList() {
         </div>
       ) : (
         <div className="flex flex-col gap-4">
+          {/* Show empty state if no active appointments but there are inactive recurring */}
+          {!hasAppointments && inactiveRecurringTemplates.length > 0 && (
+            <div className="py-12 border border-dashed border-border bg-muted/5 text-center">
+              <p className="text-sm text-muted-foreground">
+                {t("list.empty")}
+              </p>
+            </div>
+          )}
           {/* Sleep appointments section */}
           {sleepAppointments.length > 0 && (
             <div className="flex flex-col gap-2">
@@ -175,6 +210,38 @@ export default function AppointmentsList() {
                   />
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Inactive recurring templates section (collapsible) */}
+          {inactiveRecurringTemplates.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => setShowInactiveRecurring(!showInactiveRecurring)}
+                className="flex items-center justify-between px-1 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <span>
+                  {t("list.inactiveRecurring", { count: inactiveRecurringTemplates.length })}
+                </span>
+                {showInactiveRecurring ? (
+                  <ChevronUpIcon className="w-4 h-4" />
+                ) : (
+                  <ChevronDownIcon className="w-4 h-4" />
+                )}
+              </button>
+              {showInactiveRecurring && (
+                <div className="grid gap-px bg-border border border-border opacity-60">
+                  {inactiveRecurringTemplates.map((appointment) => (
+                    <AppointmentsListItem
+                      key={appointment.id}
+                      appointment={appointment}
+                      onEdit={() => setEditingAppointment(appointment)}
+                      onRemove={() => removeAppointment(appointment.id)}
+                      disabled={isSaving}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
