@@ -5,7 +5,7 @@
 
 import { useMemo } from "react";
 import { Appointment } from "@/types";
-import { findFirstAvailableSlot } from "@/features/appointments/services/appointments-time-utils.service";
+import { findFirstAvailableSlot } from "@/features/appointments/services/appointments-slot-finder.service";
 
 type UseTimeInputDisabledProps = {
   disabled?: boolean;

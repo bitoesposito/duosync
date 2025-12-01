@@ -10,23 +10,35 @@ import { Appointment } from "@/types";
  * otherwise falls back to individual fetch.
  */
 export function useOtherUserAppointments(otherUserId: number | undefined) {
-  const { otherUserAppointments, isLoading: isLoadingContext } = useAppointments();
+  const { otherUserAppointments, isLoading: isLoadingContext, isFetching } = useAppointments();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!otherUserId) {
       setAppointments([]);
+      setIsLoading(false);
       return;
     }
 
     // If appointments are available from context (batch fetch), use them
+    // Check for both undefined (not loaded yet) and empty array (loaded but empty)
     if (otherUserAppointments !== undefined) {
       setAppointments(otherUserAppointments);
+      setIsLoading(false);
       return;
     }
 
-    // Otherwise, fetch individually (fallback for edge cases)
+    // If context is still loading or fetching, wait for it
+    // This prevents unnecessary individual fetch when batch is in progress
+    if (isLoadingContext || isFetching) {
+      setIsLoading(true);
+      return;
+    }
+
+    // Context is not loading/fetching but otherUserAppointments is undefined
+    // This means batch fetch didn't include this user or failed
+    // Fetch individually as fallback
     let cancelled = false;
     setIsLoading(true);
 
@@ -51,10 +63,10 @@ export function useOtherUserAppointments(otherUserId: number | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [otherUserId, otherUserAppointments]);
+  }, [otherUserId, otherUserAppointments, isLoadingContext, isFetching]);
 
-  // Loading state: true if context is loading OR if we're doing individual fetch
-  const isLoadingCombined = isLoadingContext || isLoading;
+  // Loading state: true if context is loading/fetching OR if we're doing individual fetch
+  const isLoadingCombined = isLoadingContext || isFetching || isLoading;
 
   return { appointments, isLoading: isLoadingCombined };
 }

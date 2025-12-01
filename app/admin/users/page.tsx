@@ -57,7 +57,7 @@ export default async function AdminUsersPage({
 
         {/* Right Column: User Details / Edit (8 columns on md, 9 on lg, full width on mobile) */}
         <div className="col-span-12 md:col-span-8 lg:col-span-9 flex flex-col gap-6">
-          <UserDetails user={selectedUser} showNewUserForm={showNewUserForm} />
+          <UserDetails user={selectedUser} showNewUserForm={showNewUserForm} currentUserCount={users.length} />
         </div>
       </div>
     </main>

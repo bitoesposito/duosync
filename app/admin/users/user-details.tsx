@@ -18,16 +18,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useI18n } from "@/i18n";
+import { MAX_USERS } from "@/lib/config/users";
 
 interface UserDetailsProps {
   user?: UserProfile;
   showNewUserForm?: boolean;
+  currentUserCount?: number;
 }
 
 /**
  * User details component for creating/editing users.
  */
-export default function UserDetails({ user, showNewUserForm = false }: UserDetailsProps) {
+export default function UserDetails({ user, showNewUserForm = false, currentUserCount = 0 }: UserDetailsProps) {
   const router = useRouter();
   const { t } = useI18n();
   
@@ -35,6 +37,28 @@ export default function UserDetails({ user, showNewUserForm = false }: UserDetai
   const [name, setName] = useState(user?.name || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  
+  // Check if max users limit is reached
+  const isMaxUsersReached = currentUserCount >= MAX_USERS;
+  
+  // Scroll to this section when user is selected (for mobile only)
+  useEffect(() => {
+    if (user || showNewUserForm) {
+      // Check if we're on mobile (viewport width < 768px)
+      const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+      if (isMobile) {
+        // Small delay to ensure DOM is updated after navigation
+        const timeoutId = setTimeout(() => {
+          const detailsSection = document.getElementById("user-details-section");
+          if (detailsSection) {
+            detailsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 150);
+        
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [user, showNewUserForm]);
 
   // Update form when user prop changes
   useEffect(() => {
@@ -58,7 +82,12 @@ export default function UserDetails({ user, showNewUserForm = false }: UserDetai
       if (!user) setName(""); // Reset if create mode
     } catch (error) {
       console.error(error);
-      toast.error(user ? t("admin.users.messages.updateError") : t("admin.users.messages.createError"));
+      // Check if error is due to max users limit
+      if (error instanceof Error && ((error as any).code === "MAX_USERS_EXCEEDED" || error.message.includes("Limite massimo"))) {
+        toast.error(t("admin.users.messages.maxUsersReached", { max: MAX_USERS }));
+      } else {
+        toast.error(user ? t("admin.users.messages.updateError") : t("admin.users.messages.createError"));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -87,7 +116,7 @@ export default function UserDetails({ user, showNewUserForm = false }: UserDetai
     // Show new user form if "new" parameter is present
     if (showNewUserForm) {
       return (
-        <div className="flex flex-col gap-6">
+        <div id="user-details-section" className="flex flex-col gap-6">
           {/* Create Form Section */}
           <section className="w-full flex flex-col gap-0 border-b border-border pb-6">
             <header className="space-y-0.5 pb-4">
@@ -124,13 +153,19 @@ export default function UserDetails({ user, showNewUserForm = false }: UserDetai
                 <Button
                   type="submit"
                   variant="outline"
-                  disabled={isSubmitting || !name.trim()}
+                  disabled={isSubmitting || !name.trim() || isMaxUsersReached}
                   className="rounded-none h-10 text-sm font-medium tracking-wide"
                 >
                   {isSubmitting && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
                   {t("admin.users.details.save")}
                 </Button>
               </div>
+              
+              {isMaxUsersReached && (
+                <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded border border-border">
+                  {t("admin.users.messages.maxUsersReached", { max: MAX_USERS })}
+                </div>
+              )}
             </form>
           </section>
         </div>
@@ -139,7 +174,7 @@ export default function UserDetails({ user, showNewUserForm = false }: UserDetai
 
     // Otherwise show welcome message
     return (
-      <div className="flex flex-col gap-6">
+      <div id="user-details-section" className="flex flex-col gap-6">
         <section className="w-full flex flex-col gap-0">
           <div className="py-12 border border-dashed border-border bg-muted/5 text-center flex flex-col items-center justify-center gap-4">
             <h2 className="text-lg font-medium tracking-tight text-foreground">
@@ -156,7 +191,7 @@ export default function UserDetails({ user, showNewUserForm = false }: UserDetai
 
   // If user selected, show edit form
   return (
-    <div className="flex flex-col gap-6">
+    <div id="user-details-section" className="flex flex-col gap-6">
       {/* Edit Form Section */}
       <section className="w-full flex flex-col gap-0 border-b border-border pb-6">
         <header className="space-y-0.5 pb-4">

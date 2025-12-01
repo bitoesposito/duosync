@@ -10,7 +10,7 @@ import { Appointment } from "@/types";
 import {
   findFirstAvailableSlot,
   correctStartTimeIfInvalid,
-} from "@/features/appointments/services/appointments-time-utils.service";
+} from "@/features/appointments/services/appointments-slot-finder.service";
 import {
   calculateMaxAvailableTime,
   calculateAvailableHours,

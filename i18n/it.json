@@ -22,7 +22,6 @@
     "language": "Lingua",
     "languageItalian": "Italiano",
     "languageEnglish": "Inglese",
-    "languageUkrainian": "Ucraino",
     "selectUserFallback": "Seleziona utente",
     "selectLanguageFallback": "Lingua",
     "theme": "Tema",
@@ -52,8 +51,12 @@
     "quickPresetsLabel": "Preset rapidi",
     "descriptionLabel": "Descrizione",
     "descriptionPlaceholder": "Impegno, sonno, lavoro...",
-    "repeatLabel": "Ripeti",
-    "addButtonDefault": "Aggiungi",
+      "repeatLabel": "Ripeti",
+      "quickSelect": {
+        "allWeek": "Tutta la settimana",
+        "weekend": "Fine settimana"
+      },
+      "addButtonDefault": "Aggiungi",
     "addButtonSyncing": "Sincronizzazione...",
     "userRequired": "Seleziona un utente dalla navbar per creare un impegno",
     "noSlotsAvailable": "Nessuno slot disponibile",
@@ -247,6 +250,7 @@
       "messages": {
         "createSuccess": "Utente creato con successo",
         "createError": "Errore nella creazione dell'utente",
+        "maxUsersReached": "Limite massimo di {{max}} utenti raggiunto. Elimina un utente esistente per crearne uno nuovo.",
         "updateSuccess": "Utente aggiornato con successo",
         "updateError": "Errore nell'aggiornamento dell'utente",
         "deleteSuccess": "Utente eliminato con successo",

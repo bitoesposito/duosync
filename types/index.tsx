@@ -115,6 +115,7 @@ export type AppointmentsContextValue = {
   removeAppointment: (id: string) => void;
   isLoading: boolean;
   isSaving: boolean;
+  isFetching: boolean; // True when actively fetching data (for other components to know)
 };
 
 /**
@@ -147,7 +148,7 @@ export type I18nContextValue = {
 /**
  * Supported locale codes.
  */
-export type Locale = "it" | "en" | "uk";
+export type Locale = "it" | "en";
 
 /**
  * Values for template interpolation in translations.

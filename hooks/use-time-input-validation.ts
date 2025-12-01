@@ -3,12 +3,16 @@ import { Appointment } from "@/types";
 import {
   findFirstAvailableSlot,
   findNextAvailableSlot,
+} from "@/features/appointments/services/appointments-slot-finder.service";
+import {
   calculateOptimalEndTime,
   getMinEndTime,
+} from "@/features/appointments/services/appointments-time-suggestions.service";
+import {
   wouldOverlap,
   validateTimeFormat,
   validateTimeOrder,
-} from "@/features/appointments/services/appointments-time-utils.service";
+} from "@/features/appointments/services/appointments-time-validation.service";
 import { parseTimeStrict } from "@/lib/time/dayjs";
 
 type ValidationState = {

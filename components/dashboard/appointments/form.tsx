@@ -9,7 +9,7 @@ import { useAppointments } from "@/features/appointments";
 import { useI18n } from "@/i18n";
 import { useUsers } from "@/features/users";
 import { buildAppointmentFormData } from "@/features/appointments";
-import { findFirstAvailableSlot } from "@/features/appointments/services/appointments-time-utils.service";
+import { findFirstAvailableSlot } from "@/features/appointments/services/appointments-slot-finder.service";
 import { AppointmentCategory, DayId } from "@/types";
 import { CategorySelector } from "./form-category-selector";
 import { TimeInputs } from "./form-time-inputs";

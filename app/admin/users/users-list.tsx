@@ -7,10 +7,11 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusIcon, UserIcon, SearchIcon, ChevronDownIcon, ChevronUpIcon, TrashIcon, Loader2Icon } from "lucide-react";
+import { PlusIcon, UserIcon, SearchIcon, TrashIcon, Loader2Icon } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { deleteUser } from "@/features/users/services/users.service";
 import { toast } from "sonner";
+import { MAX_USERS } from "@/lib/config/users";
 import {
   Dialog,
   DialogContent,
@@ -19,32 +20,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 
 interface UsersListProps {
   users: UserProfile[];
   selectedUserId?: number;
 }
 
-const ITEMS_PER_PAGE = 8;
-
 /**
- * Users list component with search, pagination, and collapsible header on mobile.
- * Follows the same pattern as the appointments form in the dashboard.
+ * Users list component with search.
+ * On mobile, clicking a user scrolls to the user details section.
+ * Since the maximum number of users is limited to 10, pagination is not needed.
  */
 export default function UsersList({ users, selectedUserId }: UsersListProps) {
   const { t } = useI18n();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isOpen, setIsOpen] = useState(false); // Default collapsed on mobile
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -56,17 +46,11 @@ export default function UsersList({ users, selectedUserId }: UsersListProps) {
     return users.filter((user) => user.name.toLowerCase().includes(query));
   }, [users, searchQuery]);
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
   /**
-   * Handles search input changes and resets pagination to page 1.
+   * Handles search input changes.
    */
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    setCurrentPage(1);
   };
 
   /**
@@ -107,27 +91,13 @@ export default function UsersList({ users, selectedUserId }: UsersListProps) {
 
   return (
     <section className="w-full flex flex-col gap-0 border-b border-border md:border-b-0 bg-background md:bg-transparent">
-      <header
-        className="flex items-center justify-between py-3 md:pt-0 pt-3 md:cursor-default cursor-pointer hover:opacity-70 md:hover:opacity-100 transition-opacity"
-        onClick={() => setIsOpen(!isOpen)}
-      >
+      <header className="flex items-center justify-between py-3 md:pt-0 pt-3">
         <h2 className="text-lg font-medium tracking-tight text-foreground">
           {t("admin.users.listTitle")}
         </h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden text-muted-foreground hover:text-foreground hover:bg-transparent rounded-none h-8 w-8 cursor-pointer"
-        >
-          {isOpen ? (
-            <ChevronUpIcon className="w-4 h-4" />
-          ) : (
-            <ChevronDownIcon className="w-4 h-4" />
-          )}
-        </Button>
       </header>
 
-      <div className={`${isOpen ? "block" : "hidden"} md:block`}>
+      <div className="block">
         <div className="flex flex-col gap-4 pb-6 md:pb-0">
           {/* Search Bar */}
           <div className="flex flex-col gap-1">
@@ -144,17 +114,32 @@ export default function UsersList({ users, selectedUserId }: UsersListProps) {
           </div>
 
           {/* New User Button */}
-          <Button asChild className="w-full justify-start rounded-none h-10 text-sm" variant="outline">
-            <Link href="/admin/users?new=true">
+          {users.length >= MAX_USERS ? (
+            <Button 
+              className="w-full justify-start rounded-none h-10 text-sm" 
+              variant="outline"
+              disabled={true}
+            >
               <PlusIcon className="mr-2 h-4 w-4" />
               {t("admin.users.newUser")}
-            </Link>
-          </Button>
+            </Button>
+          ) : (
+            <Button 
+              asChild 
+              className="w-full justify-start rounded-none h-10 text-sm" 
+              variant="outline"
+            >
+              <Link href="/admin/users?new=true">
+                <PlusIcon className="mr-2 h-4 w-4" />
+                {t("admin.users.newUser")}
+              </Link>
+            </Button>
+          )}
 
           {/* Users List */}
           <div className="flex flex-col max-h-[400px] overflow-y-auto">
-            {paginatedUsers.length > 0 ? (
-              paginatedUsers.map((user) => (
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((user) => (
                 <div
                   key={user.id}
                   className={cn(
@@ -190,47 +175,10 @@ export default function UsersList({ users, selectedUserId }: UsersListProps) {
             )}
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="pt-2">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (currentPage > 1) setCurrentPage(currentPage - 1);
-                      }}
-                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                    />
-                  </PaginationItem>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <PaginationItem key={page}>
-                      <PaginationLink
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setCurrentPage(page);
-                        }}
-                        isActive={currentPage === page}
-                      >
-                        {page}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-                      }}
-                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
+          {/* Max Users Message */}
+          {users.length >= MAX_USERS && (
+            <div className="w-full p-3 bg-muted/50 rounded border border-border text-sm text-muted-foreground text-center">
+              {t("admin.users.messages.maxUsersReached", { max: MAX_USERS })}
             </div>
           )}
         </div>

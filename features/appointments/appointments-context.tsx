@@ -48,16 +48,36 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
   const isSaving = pendingMutations > 0;
   const isLoading =
     typeof activeUser?.id === "number" && activeUser.id !== loadedUserId;
+  
+  // Track if we're currently fetching to help other components know when data is being loaded
+  const [isFetching, setIsFetching] = useState(false);
 
   useEffect(() => {
     if (!activeUser?.id) {
+      setAppointments([]);
+      setRecurringTemplates([]);
+      setOtherUserAppointments(undefined);
+      setLoadedUserId(null);
       return;
     }
     let cancelled = false;
+    setIsFetching(true);
 
-    // Load active appointments for today and all recurring templates in parallel
+    // Reset state when user changes to avoid showing stale data
     const otherUser = users.find((u) => u.id !== activeUser.id);
     
+    // Reset appointments and templates immediately
+    setAppointments([]);
+    setRecurringTemplates([]);
+    
+    // Only reset otherUserAppointments if there's no other user
+    // If there's another user, keep the old value until new data arrives
+    // This prevents the hook from doing an unnecessary individual fetch
+    if (!otherUser?.id) {
+      setOtherUserAppointments(undefined);
+    }
+    
+    // Load active appointments for today and all recurring templates in parallel
     // Fetch active appointments (for today)
     const activeAppointmentsPromise = otherUser?.id
       ? fetchAppointmentsBatch([activeUser.id, otherUser.id]).then((data) => {
@@ -94,7 +114,10 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
         }
       })
       .finally(() => {
-        if (!cancelled) setLoadedUserId(activeUser.id);
+        if (!cancelled) {
+          setLoadedUserId(activeUser.id);
+          setIsFetching(false);
+        }
       });
 
     return () => {
@@ -297,8 +320,9 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
       removeAppointment,
       isLoading,
       isSaving,
+      isFetching,
     }),
-    [appointments, recurringTemplates, otherUserAppointments, addAppointment, updateAppointment, removeAppointment, isLoading, isSaving]
+    [appointments, recurringTemplates, otherUserAppointments, addAppointment, updateAppointment, removeAppointment, isLoading, isSaving, isFetching]
   );
 
   return (

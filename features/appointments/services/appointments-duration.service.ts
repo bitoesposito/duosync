@@ -5,7 +5,8 @@
 
 import { parseTimeStrict, TWENTY_FOUR_HOUR_FORMAT, default as dayjs } from "@/lib/time/dayjs";
 import { Appointment } from "@/types";
-import { getAvailableSlots, wouldOverlap } from "./appointments-time-utils.service";
+import { getAvailableSlots } from "./appointments-slot-finder.service";
+import { wouldOverlap } from "./appointments-time-validation.service";
 
 /**
  * Calculates the maximum available time from a start time to the next appointment or midnight.
@@ -127,29 +128,75 @@ export function getTotalMinutes(hours: string, minutes: string): number {
 }
 
 /**
+ * Returns how many minutes are available between the start time and 23:59.
+ * Useful to cap the duration so that we never spill into the next day.
+ * @param startTime - Start time in HH:mm format
+ * @returns Minutes available until end of day, or null if invalid
+ */
+export function getMinutesUntilEndOfDay(startTime: string): number | null {
+  if (!startTime) {
+    return null;
+  }
+
+  const start = parseTimeStrict(startTime);
+  const endOfDay = parseTimeStrict("23:59");
+
+  if (!start.isValid() || !endOfDay.isValid()) {
+    return null;
+  }
+
+  const diff = endOfDay.diff(start, "minute");
+  return diff > 0 ? diff : 0;
+}
+
+/**
  * Calculates end time from start time and duration in minutes.
  * Handles midnight crossing by capping at 23:59.
+ * Supports both required and optional duration parameters for different use cases.
  * @param startTime - Start time in HH:mm format
- * @param durationMinutes - Duration in minutes
- * @returns End time in HH:mm format
+ * @param durationMinutes - Duration in minutes (required) or optional for null-safe version
+ * @returns End time in HH:mm format, empty string if invalid, or null if duration is null/undefined
  */
 export function calculateEndTimeFromDuration(
   startTime: string,
   durationMinutes: number
-): string {
-  if (!startTime || durationMinutes <= 0) return "";
-  const start = dayjs(startTime, "HH:mm");
-  if (!start.isValid()) return "";
+): string;
+export function calculateEndTimeFromDuration(
+  startTime: string,
+  durationMinutes?: number | null
+): string | null;
+export function calculateEndTimeFromDuration(
+  startTime: string,
+  durationMinutes?: number | null
+): string | null {
+  if (!startTime || !durationMinutes || durationMinutes <= 0) {
+    return null;
+  }
 
-  const end = start.add(durationMinutes, "minute");
-  const endTimeStr = end.format("HH:mm");
-  
-  // If we crossed midnight or reached exactly 24:00, cap at 23:59
-  if (endTimeStr === "00:00" || !end.isSame(start, "day") || endTimeStr >= "24:00") {
+  const start = parseTimeStrict(startTime);
+  if (!start.isValid()) {
+    return null;
+  }
+
+  // Use getMinutesUntilEndOfDay to cap duration at end of day
+  const maxDuration = getMinutesUntilEndOfDay(startTime);
+  const safeDuration =
+    typeof maxDuration === "number"
+      ? Math.min(durationMinutes, maxDuration)
+      : durationMinutes;
+
+  const end = start.add(safeDuration, "minute");
+  const endOfDay = parseTimeStrict("23:59");
+
+  if (!endOfDay.isValid()) {
+    return end.format(TWENTY_FOUR_HOUR_FORMAT);
+  }
+
+  if (end.isAfter(endOfDay)) {
     return "23:59";
   }
-  
-  return endTimeStr;
+
+  return end.format(TWENTY_FOUR_HOUR_FORMAT);
 }
 
 /**

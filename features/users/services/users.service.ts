@@ -44,8 +44,13 @@ export async function createUser(name: string): Promise<UserProfile> {
   });
 
   if (!response.ok) {
-    const error = (await response.json()) as { error?: string };
-    throw new Error(error.error || "Failed to create user");
+    const error = (await response.json()) as { error?: string; code?: string };
+    const errorMessage = new Error(error.error || "Failed to create user");
+    // Preserve error code for frontend handling
+    if (error.code) {
+      (errorMessage as any).code = error.code;
+    }
+    throw errorMessage;
   }
 
   const data = (await response.json()) as { user: UserProfile };

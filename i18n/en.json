@@ -22,7 +22,6 @@
     "language": "Language",
     "languageItalian": "Italian",
     "languageEnglish": "English",
-    "languageUkrainian": "Ukrainian",
     "selectUserFallback": "Select user",
     "selectLanguageFallback": "Language",
     "theme": "Theme",
@@ -52,8 +51,12 @@
     "quickPresetsLabel": "Quick Presets",
     "descriptionLabel": "Description",
     "descriptionPlaceholder": "Meeting, sleep, work...",
-    "repeatLabel": "Repeat",
-    "addButtonDefault": "Add",
+      "repeatLabel": "Repeat",
+      "quickSelect": {
+        "allWeek": "All week",
+        "weekend": "Weekend"
+      },
+      "addButtonDefault": "Add",
     "addButtonSyncing": "Syncing...",
     "userRequired": "Select a user from the navbar to create an appointment",
     "noSlotsAvailable": "No slots available",
@@ -248,6 +251,7 @@
       "messages": {
         "createSuccess": "User created successfully",
         "createError": "Error creating user",
+        "maxUsersReached": "Maximum limit of {{max}} users reached. Delete an existing user to create a new one.",
         "updateSuccess": "User updated successfully",
         "updateError": "Error updating user",
         "deleteSuccess": "User deleted successfully",

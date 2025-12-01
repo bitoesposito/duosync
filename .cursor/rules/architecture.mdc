@@ -85,3 +85,10 @@ These rules describe how I want apps to be structured.
   - global state management,
   - and JSX rendering, when they can be separated.
 - If the file exceeds 200 lines of codes approx., refacotr it to subdivide into smaller pieces
+
+- **API Documentation**
+  - If you create any API endpoints (e.g., in `app/api/*`), you **must** maintain a Postman collection that documents those APIs.
+  - This collection must be stored in `/api-docs` at the root of the project, and **must not** include the `"response"` field for any endpoint.
+  - Every time you add, modify, or remove an API endpoint, you must update the Postman collection accordingly so it always matches the current API routes and their usage.
+  - You must also create and keep updated a Postman environment file (e.g., `duosync-env.postman_environment.json`), stored in `/api-docs`, containing any variables needed for API usage (such as `baseUrl`), each with a sensible default value.
+  - These steps make sure API documentation is always usable and current for all developers and external consumers.

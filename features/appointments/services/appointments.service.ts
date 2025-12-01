@@ -12,7 +12,7 @@ import {
   wouldOverlap,
   validateTimeFormat,
   validateTimeOrder,
-} from "./appointments-time-utils.service";
+} from "./appointments-time-validation.service";
 
 // ============================================================================
 // BUSINESS LOGIC - Pure functions (no side effects)

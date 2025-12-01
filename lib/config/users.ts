@@ -1,10 +1,7 @@
 import { UserProfile } from "@/types";
 
 /**
- * Static directory of users that can be selected from the header.
- * To add or modify users, simply edit this array.
+ * Maximum number of users allowed in the application.
+ * This limit ensures optimal performance and scalability.
  */
-export const USER_DIRECTORY: UserProfile[] = [
-  { id: 1, name: "Vito Esposito" },
-  { id: 2, name: "Vladlen Oleksuk" },
-];
+export const MAX_USERS = 10;

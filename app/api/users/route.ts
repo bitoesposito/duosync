@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { db, schema } from "@/lib/db";
 import { UserProfile } from "@/types";
-import { eq } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
+import { MAX_USERS } from "@/lib/config/users";
 
 /**
  * GET /api/users
@@ -31,6 +32,7 @@ type CreateUserPayload = {
 /**
  * POST /api/users
  * Creates a new user in the database.
+ * Validates that the maximum number of users (MAX_USERS) is not exceeded.
  */
 export async function POST(request: Request) {
   const payload = (await request.json()) as CreateUserPayload;
@@ -42,6 +44,23 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Check current user count before creating new user
+    const userCountResult = await db
+      .select({ count: count() })
+      .from(schema.users);
+    
+    const currentUserCount = userCountResult[0]?.count ?? 0;
+    
+    if (currentUserCount >= MAX_USERS) {
+      return NextResponse.json(
+        { 
+          error: `Limite massimo di ${MAX_USERS} utenti raggiunto. Elimina un utente esistente per crearne uno nuovo.`,
+          code: "MAX_USERS_EXCEEDED"
+        },
+        { status: 403 }
+      );
+    }
+
     const result = await db
       .insert(schema.users)
       .values({ name: payload.name.trim() })
