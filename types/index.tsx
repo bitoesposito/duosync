@@ -64,6 +64,28 @@ export type AppointmentValidationResult =
       reason: "invalid-format" | "end-before-start" | "overlap";
     };
 
+/**
+ * Recurring appointment data structure used for validation purposes.
+ * Contains only the fields needed to check for overlaps.
+ */
+export type RecurringAppointmentForValidation = {
+  id: string;
+  startTime: string;
+  endTime: string;
+  repeatDays: DayId[];
+};
+
+/**
+ * One-time appointment data structure used for validation purposes.
+ * Contains only the fields needed to check for overlaps.
+ */
+export type OneTimeAppointmentForValidation = {
+  id: string;
+  startTime: string;
+  endTime: string;
+  dayOfWeek: DayId;
+};
+
 // ============================================================================
 // USERS
 // ============================================================================

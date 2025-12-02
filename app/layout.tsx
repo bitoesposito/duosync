@@ -99,6 +99,8 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+export const dynamic = 'force-dynamic';
+
 export const viewport: Viewport = {
   themeColor: "#000000",
   width: "device-width",

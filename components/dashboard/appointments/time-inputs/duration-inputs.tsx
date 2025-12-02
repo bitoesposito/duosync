@@ -88,7 +88,6 @@ export function DurationInputs({
           >
             <Command>
               <CommandInput
-                type="number"
                 inputMode="numeric"
                 placeholder={t("form.durationHoursLabel")}
                 className="h-9"
@@ -150,7 +149,6 @@ export function DurationInputs({
           >
             <Command>
               <CommandInput
-                type="number"
                 inputMode="numeric"
                 placeholder={t("form.durationMinutesLabel")}
                 className="h-9"

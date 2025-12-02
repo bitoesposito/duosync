@@ -5,6 +5,8 @@ import UsersList from "./users-list";
 import UserDetails from "./user-details";
 import PageHeader from "./page-header";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Admin users management page.
  * Displays a list of users on the left (4 columns) and user details on the right (8 columns).
@@ -13,7 +15,7 @@ import PageHeader from "./page-header";
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ userId?: string; new?: string }> | { userId?: string; new?: string };
+  searchParams: Promise<{ userId?: string; new?: string }>;
 }) {
   const cookieStore = await cookies();
   const isAdmin = cookieStore.get("admin_session");
@@ -25,10 +27,8 @@ export default async function AdminUsersPage({
   // Fetch users server-side for initial render
   const users = await getUsersFromDb();
   
-  // Handle searchParams as Promise (Next.js 16+)
-  const resolvedSearchParams = searchParams instanceof Promise 
-    ? await searchParams 
-    : searchParams;
+  // Resolve searchParams Promise (Next.js 16+)
+  const resolvedSearchParams = await searchParams;
   
   // Parse userId from searchParams (handle both string and array cases)
   const userIdParam = resolvedSearchParams.userId;

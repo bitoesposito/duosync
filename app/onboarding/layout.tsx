@@ -1,6 +1,8 @@
 import { isAppInitialized } from "@/lib/settings";
 import { redirect } from "next/navigation";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Layout for onboarding route.
  * Redirects to home if the app is already initialized.

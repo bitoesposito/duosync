@@ -106,7 +106,7 @@ export async function subscribeToPush(
     const newSubscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: publicKey
-        ? urlBase64ToUint8Array(publicKey)
+        ? (urlBase64ToUint8Array(publicKey) as BufferSource)
         : undefined,
     });
 
