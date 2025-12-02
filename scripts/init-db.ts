@@ -63,6 +63,19 @@ async function initDatabase() {
       )
     `);
 
+    // Create push_subscriptions table
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        endpoint TEXT NOT NULL UNIQUE,
+        p256dh TEXT NOT NULL,
+        auth TEXT NOT NULL,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+
     // Create indexes
     await db.execute(sql`
       CREATE INDEX IF NOT EXISTS appointments_userId_date_idx ON appointments("userId", date)
@@ -70,6 +83,14 @@ async function initDatabase() {
     
     await db.execute(sql`
       CREATE INDEX IF NOT EXISTS recurring_appointments_userId_idx ON recurring_appointments("userId")
+    `);
+
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS push_subscriptions_userId_idx ON push_subscriptions("userId")
+    `);
+
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS push_subscriptions_endpoint_idx ON push_subscriptions(endpoint)
     `);
 
     // Insert default users if none exist - REMOVED for new onboarding flow

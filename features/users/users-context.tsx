@@ -14,7 +14,7 @@ import { fetchUsers, createUser, updateUser, deleteUser } from "./services/users
 
 const ACTIVE_USER_STORAGE_KEY = "duosync.activeUserId";
 
-const UsersContext = createContext<UsersContextValue | undefined>(undefined);
+export const UsersContext = createContext<UsersContextValue | undefined>(undefined);
 
 /**
  * Parses a stored user ID from localStorage.
@@ -47,13 +47,20 @@ export function UsersProvider({ children }: { children: ReactNode }) {
         const usersData = await fetchUsers();
         setUsers(usersData);
 
-        // If no active user is set and we have users, select the first one
+        // Always select the first user if we have users and no valid active user is set
         // Use functional update to avoid dependency on activeUserId
         setActiveUserId((currentId) => {
-          if (!currentId && usersData.length > 0) {
-            return usersData[0].id;
+          // If we have users, ensure one is always selected
+          if (usersData.length > 0) {
+            // If no current user or current user doesn't exist in the list, select the first one
+            if (!currentId || !usersData.some((u) => u.id === currentId)) {
+              return usersData[0].id;
+            }
+            // Keep current user if it's still valid
+            return currentId;
           }
-          return currentId;
+          // No users available, clear selection
+          return undefined;
         });
       } catch (error) {
         console.error("Error loading users:", error);
@@ -73,6 +80,18 @@ export function UsersProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(ACTIVE_USER_STORAGE_KEY, String(activeUserId));
   }, [activeUserId]);
 
+  // Ensure a user is always selected when users list changes
+  // This handles cases like returning from admin panel after creating a user
+  useEffect(() => {
+    if (isLoading || users.length === 0) return;
+
+    // If we have users but no valid active user, select the first one
+    const hasValidActiveUser = activeUserId && users.some((u) => u.id === activeUserId);
+    if (!hasValidActiveUser) {
+      setActiveUserId(users[0].id);
+    }
+  }, [users, activeUserId, isLoading]);
+
   const selectUser = useCallback(
     (userId: number) => {
       const userExists = users.some((u) => u.id === userId);
@@ -85,6 +104,7 @@ export function UsersProvider({ children }: { children: ReactNode }) {
   /**
    * Reloads users from the API.
    * Used after create, update, or delete operations.
+   * Ensures that if users are available, one is always selected.
    */
   const refreshUsers = useCallback(async () => {
     try {
@@ -92,12 +112,18 @@ export function UsersProvider({ children }: { children: ReactNode }) {
       const usersData = await fetchUsers();
       setUsers(usersData);
 
-      // If the active user was deleted, select the first available user
+      // Always ensure a user is selected if users are available
       setActiveUserId((currentId) => {
-        if (currentId && !usersData.some((u) => u.id === currentId)) {
-          return usersData.length > 0 ? usersData[0].id : undefined;
+        if (usersData.length > 0) {
+          // If no current user or current user doesn't exist, select the first one
+          if (!currentId || !usersData.some((u) => u.id === currentId)) {
+            return usersData[0].id;
+          }
+          // Keep current user if it's still valid
+          return currentId;
         }
-        return currentId;
+        // No users available, clear selection
+        return undefined;
       });
     } catch (error) {
       console.error("Error refreshing users:", error);

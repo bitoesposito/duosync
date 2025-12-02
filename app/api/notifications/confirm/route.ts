@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { sendPushToOtherUsers } from "@/lib/notifications/push.service";
+import { db, schema } from "@/lib/db";
+import { eq } from "drizzle-orm";
 
 type ConfirmPayload = {
   userId?: number;
@@ -22,16 +24,26 @@ export async function POST(request: Request) {
 
     const userId = payload.userId!;
 
+    // Get user name from database
+    const userResult = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, userId))
+      .limit(1);
+
+    const userName = userResult[0]?.name || "Un utente";
+
     // Send push notifications to all other users
     // Note: Translations are handled client-side, so we use Italian as default
     // In a production app, you might want to store user preferences for language
     const result = await sendPushToOtherUsers(userId, {
       title: "Nuova conferma impegni",
-      body: "Un utente ha confermato i propri impegni. Compila i tuoi impegni per verificare le disponibilità condivise.",
+      body: `${userName} ha confermato i propri impegni. Compila i tuoi impegni per verificare le disponibilità condivise.`,
       tag: "appointment-confirmation",
       data: {
         type: "appointment-confirmation",
         userId,
+        userName,
       },
     });
 

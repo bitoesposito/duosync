@@ -60,6 +60,7 @@
     "addButtonSyncing": "Syncing...",
     "userRequired": "Select a user from the navbar to create an appointment",
     "noSlotsAvailable": "No slots available",
+    "noOptionsAvailable": "No options available",
     "validation": {
       "invalidFormat": "Invalid time format",
       "endBeforeStart": "End time must be later than start time",
@@ -130,8 +131,7 @@
   "notifications": {
     "confirm": {
       "title": "Appointments confirmed",
-      "bodySingular": "You confirmed 1 appointment",
-      "bodyPlural": "You confirmed {{count}} appointments"
+      "body": "{{name}} has confirmed their appointments"
     },
     "received": {
       "title": "New appointment confirmation",

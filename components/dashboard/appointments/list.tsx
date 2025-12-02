@@ -75,7 +75,8 @@ export default function AppointmentsList() {
       // Also show a local notification for feedback
       if (isSupported && permission === "granted" && isReady) {
         const title = t("notifications.confirm.title");
-        const body = t("notifications.confirm.body");
+        const userName = activeUser?.name || t("dashboard.greetingFallback");
+        const body = t("notifications.confirm.body", { name: userName });
         
         await notify(title, {
           body,

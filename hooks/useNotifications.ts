@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useContext } from "react";
 import {
   isNotificationSupported,
   getNotificationPermission,
@@ -9,7 +10,15 @@ import {
   subscribeToPush,
   sendNotification,
 } from "@/lib/notifications/notifications.service";
-import { useUsers } from "@/features/users";
+import { UsersContext } from "@/features/users/users-context";
+
+/**
+ * Safely gets active user from context without throwing if provider is not available.
+ */
+function useActiveUserSafely() {
+  const context = useContext(UsersContext);
+  return context?.activeUser;
+}
 
 /**
  * Hook for managing push notifications and service worker.
@@ -17,7 +26,7 @@ import { useUsers } from "@/features/users";
  * Automatically registers push subscriptions on the server when permission is granted.
  */
 export function useNotifications() {
-  const { activeUser } = useUsers();
+  const activeUser = useActiveUserSafely();
   const [isSupported, setIsSupported] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
@@ -96,6 +105,8 @@ export function useNotifications() {
     let cancelled = false;
 
     async function registerSubscription() {
+      if (!registration || !vapidPublicKey || !activeUser?.id) return;
+      
       try {
         // Subscribe to push notifications with VAPID key
         const subscription = await subscribeToPush(registration, vapidPublicKey);

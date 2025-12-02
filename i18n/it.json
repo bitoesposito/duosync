@@ -60,6 +60,7 @@
     "addButtonSyncing": "Sincronizzazione...",
     "userRequired": "Seleziona un utente dalla navbar per creare un impegno",
     "noSlotsAvailable": "Nessuno slot disponibile",
+    "noOptionsAvailable": "Nessuna opzione disponibile",
     "validation": {
       "invalidFormat": "Formato orario non valido",
       "endBeforeStart": "L'orario di fine deve essere successivo all'inizio",
@@ -130,7 +131,7 @@
   "notifications": {
     "confirm": {
       "title": "Impegni confermati",
-      "body": "Apri l'app per aggiornare gli impegni"
+      "body": "{{name}} ha confermato i propri impegni"
     },
     "received": {
       "title": "Nuova conferma impegni",
