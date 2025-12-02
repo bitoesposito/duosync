@@ -1,17 +1,37 @@
 {
-  "name": "DuoSync",
+  "name": "DuoSync - Sincronizza i tuoi impegni con gli altri",
   "short_name": "DuoSync",
-  "description": "Sincronizza i tuoi impegni con il tuo partner",
+  "description": "DuoSync è l'app per sincronizzare gli impegni tra più persone. Gestisci appuntamenti, verifica disponibilità condivise e organizza il tuo tempo insieme ad amici, colleghi o chiunque condivida i tuoi impegni.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
   "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "it",
+  "dir": "ltr",
+  "categories": ["productivity", "lifestyle", "utilities"],
   "icons": [
     {
       "src": "/favicon.ico",
       "sizes": "any",
-      "type": "image/x-icon"
+      "type": "image/x-icon",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Vai alla dashboard principale",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/favicon.ico",
+          "sizes": "any"
+        }
+      ]
     }
   ]
 }

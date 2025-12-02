@@ -15,6 +15,14 @@
     },
     "repeats": "Ripete"
   },
+  "metadata": {
+    "title": "DuoSync - Sincronizza i tuoi impegni con gli altri",
+    "description": "DuoSync è l'app per sincronizzare gli impegni tra più persone. Gestisci appuntamenti, verifica disponibilità condivise e organizza il tuo tempo insieme ad amici, colleghi o chiunque condivida i tuoi impegni.",
+    "keywords": "DuoSync, sincronizzazione impegni, appuntamenti condivisi, gestione tempo, calendario condiviso, disponibilità condivisa, gestione gruppo, PWA, progressive web app",
+    "ogTitle": "DuoSync - Sincronizza i tuoi impegni con gli altri",
+    "ogDescription": "DuoSync è l'app per sincronizzare gli impegni tra più persone. Gestisci appuntamenti, verifica disponibilità condivise e organizza il tuo tempo insieme ad amici, colleghi o chiunque condivida i tuoi impegni.",
+    "ogImageAlt": "DuoSync - Sincronizza i tuoi impegni con gli altri"
+  },
   "header": {
     "appName": "DuoSync",
     "switchUser": "Cambia utente",
@@ -152,7 +160,7 @@
       },
       "notifications": {
         "title": "Abilita notifiche",
-        "enabled": "Ricevi notifiche quando il tuo partner conferma gli impegni",
+        "enabled": "Ricevi notifiche quando altri utenti confermano gli impegni",
         "disabled": "Le notifiche sono state disabilitate. Abilita dalle impostazioni del browser",
         "available": "Abilita le notifiche per ricevere aggiornamenti importanti",
         "notSupported": "Le notifiche non sono supportate su questo dispositivo",
@@ -184,7 +192,7 @@
     },
     "notifications": {
       "title": "Abilita le notifiche",
-      "description": "Ricevi notifiche quando il tuo partner conferma gli impegni o quando ci sono aggiornamenti importanti.",
+      "description": "Ricevi notifiche quando altri utenti confermano gli impegni o quando ci sono aggiornamenti importanti.",
       "enable": "Abilita",
       "dismiss": "Non ora"
     }

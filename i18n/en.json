@@ -15,6 +15,14 @@
     },
     "repeats": "Repeats"
   },
+  "metadata": {
+    "title": "DuoSync - Sync your appointments with others",
+    "description": "DuoSync is the app to synchronize appointments between multiple people. Manage appointments, check shared availability and organize your time together with friends, colleagues or anyone who shares your commitments.",
+    "keywords": "DuoSync, appointment synchronization, shared appointments, time management, shared calendar, shared availability, group management, PWA, progressive web app",
+    "ogTitle": "DuoSync - Sync your appointments with others",
+    "ogDescription": "DuoSync is the app to synchronize appointments between multiple people. Manage appointments, check shared availability and organize your time together with friends, colleagues or anyone who shares your commitments.",
+    "ogImageAlt": "DuoSync - Sync your appointments with others"
+  },
   "header": {
     "appName": "DuoSync",
     "switchUser": "Switch user",
@@ -152,7 +160,7 @@
       },
       "notifications": {
         "title": "Enable notifications",
-        "enabled": "Receive notifications when your partner confirms appointments",
+        "enabled": "Receive notifications when other users confirm appointments",
         "disabled": "Notifications have been disabled. Enable them from browser settings",
         "available": "Enable notifications to receive important updates",
         "notSupported": "Notifications are not supported on this device",
@@ -184,7 +192,7 @@
     },
     "notifications": {
       "title": "Enable notifications",
-      "description": "Receive notifications when your partner confirms appointments or when there are important updates.",
+      "description": "Receive notifications when other users confirm appointments or when there are important updates.",
       "enable": "Enable",
       "dismiss": "Not now"
     }
