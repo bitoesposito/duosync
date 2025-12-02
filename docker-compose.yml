@@ -24,8 +24,14 @@ services:
     container_name: duosync-app
     ports:
       - "${APP_PORT:-3000}:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
       - DATABASE_URL=postgresql://${POSTGRES_USER:-duosync}:${POSTGRES_PASSWORD:-duosync}@postgres:5432/${POSTGRES_DB:-duosync}?sslmode=disable
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
@@ -36,6 +42,7 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    # Entrypoint script will initialize database before starting Next.js
 
 volumes:
   postgres_data:
