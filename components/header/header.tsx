@@ -64,7 +64,7 @@ export default function Header() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                       <Button
-                        className="cursor-pointer rounded-none font-medium"
+                        className="cursor-pointer rounded-none font-medium cursor-pointer"
                         variant="outline"
                       >
                         <UsersIcon className="w-4 h-4 mr-2" />
@@ -102,7 +102,7 @@ export default function Header() {
                 </DropdownMenu>
               ) : (
                 <Button
-                  className="cursor-pointer rounded-none font-medium"
+                  className="cursor-pointer rounded-none font-medium cursor-pointer"
                   variant="outline"
                   disabled
                 >

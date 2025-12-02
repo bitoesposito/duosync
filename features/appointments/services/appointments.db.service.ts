@@ -10,7 +10,21 @@
  * Only import this file in API routes or other server-side code.
  */
 
-import { Appointment } from "@/types";
+import { Appointment, DayId } from "@/types";
+
+/**
+ * Sorts repeatDays array in logical order (1-7, Monday to Sunday).
+ * Ensures consistent display and storage of repeat days.
+ * @param repeatDays - Array of day IDs to sort
+ * @returns Sorted array of day IDs in ascending order (1-7)
+ */
+function sortRepeatDays(repeatDays: DayId[]): DayId[] {
+  return [...repeatDays].sort((a, b) => {
+    const numA = parseInt(a, 10);
+    const numB = parseInt(b, 10);
+    return numA - numB;
+  });
+}
 
 /**
  * Gets the day of week (1-7, Monday=1) from a date string (YYYY-MM-DD).
@@ -53,6 +67,7 @@ function mapRecurringAppointmentToDomain(
   },
   date: string
 ): Appointment {
+  const repeatDays = (row.repeatDays ?? []) as Appointment["repeatDays"];
   return {
     id: `${row.id}-${date}`,
     startTime: row.startTime,
@@ -60,7 +75,7 @@ function mapRecurringAppointmentToDomain(
     category: row.category as Appointment["category"],
     description: row.description ?? undefined,
     isRepeating: true,
-    repeatDays: (row.repeatDays ?? []) as Appointment["repeatDays"],
+    repeatDays: repeatDays.length > 0 ? sortRepeatDays(repeatDays) : [],
   };
 }
 
@@ -138,15 +153,18 @@ export async function getAllRecurringTemplatesFromDb(
 
     // Map to domain types (use today's date for the mapping, but these are templates)
     const today = new Date().toISOString().split("T")[0];
-    return recurringAppointments.map((row) => ({
-      id: row.id, // Use original ID (not date-suffixed) to identify the template
-      startTime: row.startTime,
-      endTime: row.endTime,
-      category: row.category as Appointment["category"],
-      description: row.description ?? undefined,
-      isRepeating: true,
-      repeatDays: (row.repeatDays ?? []) as Appointment["repeatDays"],
-    }));
+    return recurringAppointments.map((row) => {
+      const repeatDays = (row.repeatDays ?? []) as Appointment["repeatDays"];
+      return {
+        id: row.id, // Use original ID (not date-suffixed) to identify the template
+        startTime: row.startTime,
+        endTime: row.endTime,
+        category: row.category as Appointment["category"],
+        description: row.description ?? undefined,
+        isRepeating: true,
+        repeatDays: repeatDays.length > 0 ? sortRepeatDays(repeatDays) : [],
+      };
+    });
   } catch (error) {
     console.error("Error fetching recurring templates from database:", error);
     return [];
@@ -253,15 +271,18 @@ export async function getUserAppointmentsFromDb(userId: number): Promise<Appoint
   const mappedOneTime = oneTime.map(mapDbAppointmentToDomain);
   
   // For recurring templates in admin list, we map them directly
-  const mappedRecurring = recurring.map(row => ({
-    id: row.id,
-    startTime: row.startTime,
-    endTime: row.endTime,
-    category: row.category as Appointment["category"],
-    description: row.description ?? undefined,
-    isRepeating: true,
-    repeatDays: (row.repeatDays ?? []) as Appointment["repeatDays"],
-  }));
+  const mappedRecurring = recurring.map(row => {
+    const repeatDays = (row.repeatDays ?? []) as Appointment["repeatDays"];
+    return {
+      id: row.id,
+      startTime: row.startTime,
+      endTime: row.endTime,
+      category: row.category as Appointment["category"],
+      description: row.description ?? undefined,
+      isRepeating: true,
+      repeatDays: repeatDays.length > 0 ? sortRepeatDays(repeatDays) : [],
+    };
+  });
   
   return [...mappedOneTime, ...mappedRecurring];
 }
@@ -283,6 +304,8 @@ export async function createAppointmentInDb(
   try {
     if (appointment.isRepeating && appointment.repeatDays.length > 0) {
       // Save as recurring appointment
+      // Ensure repeatDays are sorted before saving
+      const sortedRepeatDays = sortRepeatDays(appointment.repeatDays);
       await db.insert(schema.recurringAppointments).values({
         id: appointment.id,
         userId,
@@ -290,7 +313,7 @@ export async function createAppointmentInDb(
         endTime: appointment.endTime,
         category: appointment.category,
         description: appointment.description,
-        repeatDays: appointment.repeatDays,
+        repeatDays: sortedRepeatDays,
         updatedAt: new Date(),
       });
     } else {
@@ -373,8 +396,10 @@ export async function deleteAppointmentFromDb(
 
       const currentRepeatDays = recurringAppointment[0].repeatDays || [];
       
-      // Remove the specific day from repeatDays
-      const updatedRepeatDays = currentRepeatDays.filter((day) => day !== dayOfWeek);
+      // Remove the specific day from repeatDays and sort the result
+      const updatedRepeatDays = sortRepeatDays(
+        currentRepeatDays.filter((day) => day !== dayOfWeek) as DayId[]
+      );
 
         if (updatedRepeatDays.length === 0) {
           // No days left, delete the entire recurring appointment template
@@ -452,9 +477,11 @@ export async function updateAppointmentInDb(
   const { eq, and } = await import("drizzle-orm");
 
   try {
-    // Check if it's a recurring appointment (format: "originalId-YYYY-MM-DD")
+    // Check if it's a recurring appointment
+    // Case 1: Format "originalId-YYYY-MM-DD" (recurring instance active today)
     const parts = appointmentId.split("-");
     const hasDateSuffix = parts.length >= 4;
+    let recurringId: string | null = null;
 
     if (hasDateSuffix) {
       // Try to parse the last 3 parts as a date (YYYY-MM-DD)
@@ -463,27 +490,55 @@ export async function updateAppointmentInDb(
       
       if (dateMatch) {
         // This is a recurring appointment instance
-        // We update the recurring template, not the instance
-        const recurringId = parts.slice(0, -3).join("-");
-        
-        await db
-          .update(schema.recurringAppointments)
-          .set({
-            startTime: updatedAppointment.startTime,
-            endTime: updatedAppointment.endTime,
-            category: updatedAppointment.category,
-            description: updatedAppointment.description,
-            repeatDays: updatedAppointment.repeatDays,
-            updatedAt: new Date(),
-          })
-          .where(
-            and(
-              eq(schema.recurringAppointments.id, recurringId),
-              eq(schema.recurringAppointments.userId, userId)
-            )
-          );
-        return;
+        // Extract the template ID
+        recurringId = parts.slice(0, -3).join("-");
       }
+    }
+    
+    // Case 2: Check if it's a recurring template (ID without date suffix)
+    // If the appointment has isRepeating flag, or if the ID exists in recurringAppointments table
+    if (!recurringId && updatedAppointment.isRepeating) {
+      // Check if this ID exists in recurringAppointments table
+      const existingRecurring = await db
+        .select()
+        .from(schema.recurringAppointments)
+        .where(
+          and(
+            eq(schema.recurringAppointments.id, appointmentId),
+            eq(schema.recurringAppointments.userId, userId)
+          )
+        )
+        .limit(1);
+      
+      if (existingRecurring.length > 0) {
+        recurringId = appointmentId;
+      }
+    }
+
+    // If it's a recurring appointment, update the template
+    if (recurringId) {
+      // Ensure repeatDays are sorted before saving
+      const sortedRepeatDays = updatedAppointment.repeatDays.length > 0 
+        ? sortRepeatDays(updatedAppointment.repeatDays) 
+        : [];
+      
+      await db
+        .update(schema.recurringAppointments)
+        .set({
+          startTime: updatedAppointment.startTime,
+          endTime: updatedAppointment.endTime,
+          category: updatedAppointment.category,
+          description: updatedAppointment.description,
+          repeatDays: sortedRepeatDays,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(schema.recurringAppointments.id, recurringId),
+            eq(schema.recurringAppointments.userId, userId)
+          )
+        );
+      return;
     }
 
     // One-time appointment - update directly

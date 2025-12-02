@@ -73,7 +73,7 @@ export function DurationInputs({
               variant="outline"
               role="combobox"
               aria-expanded={hoursComboboxOpen}
-              className="w-full justify-between bg-transparent border-border rounded-none h-10 text-sm font-normal"
+              className="w-full justify-between bg-transparent border-border rounded-none h-10 text-sm font-normal cursor-pointer"
               disabled={hoursDisabled}
             >
               {hours !== ""
@@ -132,7 +132,7 @@ export function DurationInputs({
               variant="outline"
               role="combobox"
               aria-expanded={minutesComboboxOpen}
-              className="w-full justify-between bg-transparent border-border rounded-none h-10 text-sm font-normal"
+              className="w-full justify-between bg-transparent border-border rounded-none h-10 text-sm font-normal cursor-pointer"
               disabled={minutesDisabled}
             >
               {minutes !== ""

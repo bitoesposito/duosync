@@ -8,7 +8,7 @@ import { PlusIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { useAppointments } from "@/features/appointments";
 import { useI18n } from "@/i18n";
 import { useUsers } from "@/features/users";
-import { buildAppointmentFormData } from "@/features/appointments";
+import { buildAppointmentFormData, sortRepeatDays } from "@/features/appointments";
 import { findFirstAvailableSlot } from "@/features/appointments/services/appointments-slot-finder.service";
 import { AppointmentCategory, DayId } from "@/types";
 import { CategorySelector } from "./form-category-selector";
@@ -82,6 +82,13 @@ export default function AppointmentsForm() {
     },
     []
   );
+
+  /**
+   * Handles repeat days change, ensuring they are always sorted.
+   */
+  const handleRepeatDaysChange = useCallback((days: DayId[]) => {
+    setRepeatDays(days.length > 0 ? sortRepeatDays(days) : []);
+  }, []);
 
   /**
    * Handles form submission: builds payload, sends to context, resets form.
@@ -183,13 +190,13 @@ export default function AppointmentsForm() {
             isRepeating={isRepeating}
             repeatDays={repeatDays}
             onRepeatingChange={setIsRepeating}
-            onRepeatDaysChange={setRepeatDays as (days: string[]) => void}
+            onRepeatDaysChange={handleRepeatDaysChange as (days: string[]) => void}
             disabled={!activeUser}
             t={t}
           />
 
           <Button
-            className="w-full cursor-pointer font-medium tracking-wide h-10 rounded-none text-sm mt-1 disabled:opacity-60"
+            className="w-full cursor-pointer font-medium tracking-wide h-10 rounded-none text-sm mt-1 disabled:opacity-60 cursor-pointer"
             variant="default"
             onClick={handleAddAppointment}
             disabled={isBusy || !activeUser || !areTimeInputsValid}

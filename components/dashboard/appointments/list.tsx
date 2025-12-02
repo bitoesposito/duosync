@@ -10,6 +10,7 @@ import { ClockIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-rea
 import AppointmentsListItem from "./list-item";
 import AppointmentEditDialog from "./appointment-edit-dialog";
 import { useAppointments } from "@/features/appointments";
+import { useUsers } from "@/features/users";
 import { useI18n } from "@/i18n";
 import { useNotifications } from "@/hooks";
 import { parseTimeStrict } from "@/lib/time/dayjs";
@@ -31,46 +32,61 @@ function sortByStartTime(a: Appointment, b: Appointment): number {
 export default function AppointmentsList() {
   const { appointments, recurringTemplates, updateAppointment, removeAppointment, isLoading, isSaving } =
     useAppointments();
+  const { activeUser } = useUsers();
   const { t } = useI18n();
   const { isSupported, permission, requestPermission, notify, isReady } =
     useNotifications();
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [showInactiveRecurring, setShowInactiveRecurring] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
   const hasAppointments = appointments.length > 0;
-  const confirmDisabled = !hasAppointments || isLoading || isSaving;
+  const confirmDisabled = !hasAppointments || isLoading || isSaving || isConfirming || !activeUser?.id;
 
   /**
-   * Handles the confirm button click: requests permission if needed and sends a test notification.
+   * Handles the confirm button click: sends push notifications to other users.
    */
   const handleConfirm = async () => {
-    if (!isSupported) {
-      console.warn("Notifications are not supported in this browser");
+    if (!activeUser?.id) {
+      console.warn("No active user selected");
       return;
     }
 
-    // Request permission if not already granted
-    if (permission !== "granted") {
-      const granted = await requestPermission();
-      if (!granted) {
-        console.warn("Notification permission denied");
-        return;
+    setIsConfirming(true);
+
+    try {
+      // Send push notifications to other users via API
+      const response = await fetch("/api/notifications/confirm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: activeUser.id,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to send confirmation notifications");
+      } else {
+        const result = await response.json();
+        console.log(`Notifications sent: ${result.sent}, failed: ${result.failed}`);
       }
-    }
 
-    // Wait for service worker to be ready
-    if (!isReady) {
-      console.warn("Service worker not ready yet");
-      return;
+      // Also show a local notification for feedback
+      if (isSupported && permission === "granted" && isReady) {
+        const title = t("notifications.confirm.title");
+        const body = t("notifications.confirm.body");
+        
+        await notify(title, {
+          body,
+          tag: "appointment-confirmation",
+        });
+      }
+    } catch (error) {
+      console.error("Error confirming appointments:", error);
+    } finally {
+      setIsConfirming(false);
     }
-
-    // Send test notification
-    const title = t("notifications.confirm.title");
-    const body = t("notifications.confirm.body");
-    
-    await notify(title, {
-      body,
-      tag: "appointment-confirmation",
-    });
   };
 
   // Separate and sort appointments by category
@@ -136,7 +152,7 @@ export default function AppointmentsList() {
               <Button
                 disabled={confirmDisabled}
                 size="sm"
-                className="rounded-none font-medium h-9 px-4"
+                className="rounded-none font-medium h-9 px-4 cursor-pointer"
                 onClick={handleConfirm}
               >
                 <CheckIcon className="w-4 h-4 mr-2" /> {t("list.confirm")}
@@ -218,7 +234,7 @@ export default function AppointmentsList() {
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => setShowInactiveRecurring(!showInactiveRecurring)}
-                className="flex items-center justify-between px-1 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center justify-between px-1 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 <span>
                   {t("list.inactiveRecurring", { count: inactiveRecurringTemplates.length })}

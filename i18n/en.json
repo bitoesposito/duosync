@@ -112,6 +112,13 @@
       "title": "Unable to save",
       "description": "Check your connection and retry."
     },
+    "updateSuccess": {
+      "title": "Appointment updated"
+    },
+    "updateError": {
+      "title": "Unable to update",
+      "description": "Check your connection and retry."
+    },
     "deleteSuccess": {
       "title": "Appointment removed"
     },
@@ -125,6 +132,10 @@
       "title": "Appointments confirmed",
       "bodySingular": "You confirmed 1 appointment",
       "bodyPlural": "You confirmed {{count}} appointments"
+    },
+    "received": {
+      "title": "New appointment confirmation",
+      "body": "A user has confirmed their appointments. Fill in your appointments to check shared availability."
     }
   },
   "settings": {

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2Icon } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { toast } from "sonner";
-import { buildAppointmentFormData, validateAppointmentSlot } from "@/features/appointments";
+import { buildAppointmentFormData, validateAppointmentSlot, sortRepeatDays } from "@/features/appointments";
 import { CategorySelector } from "@/components/dashboard/appointments/form-category-selector";
 import { TimeInputs } from "@/components/dashboard/appointments/form-time-inputs";
 import { RecurrenceSection } from "@/components/dashboard/appointments/form-recurrence";
@@ -60,10 +60,20 @@ export default function AppointmentEditDialog({
       setEndTime(appointment.endTime);
       setDescription(appointment.description || "");
       setIsRepeating(appointment.isRepeating);
-      setRepeatDays(appointment.repeatDays || []);
+      // Sort repeatDays to ensure consistent order when editing
+      setRepeatDays(appointment.repeatDays && appointment.repeatDays.length > 0 
+        ? sortRepeatDays(appointment.repeatDays) 
+        : []);
       setAreTimeInputsValid(true);
     }
   }, [appointment]);
+
+  /**
+   * Handles repeat days change, ensuring they are always sorted.
+   */
+  const handleRepeatDaysChange = useCallback((days: DayId[]) => {
+    setRepeatDays(days.length > 0 ? sortRepeatDays(days) : []);
+  }, []);
 
   /**
    * Handles saving the updated appointment.
@@ -178,7 +188,7 @@ export default function AppointmentEditDialog({
             isRepeating={isRepeating}
             repeatDays={repeatDays}
             onRepeatingChange={setIsRepeating}
-            onRepeatDaysChange={setRepeatDays as (days: string[]) => void}
+            onRepeatDaysChange={handleRepeatDaysChange as (days: string[]) => void}
             disabled={isSubmitting}
             t={t}
           />
@@ -189,14 +199,14 @@ export default function AppointmentEditDialog({
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
-            className="rounded-none h-10 text-sm font-medium tracking-wide"
+            className="rounded-none h-10 text-sm font-medium tracking-wide cursor-pointer"
           >
             {t("admin.users.deleteModal.cancel")}
           </Button>
           <Button
             onClick={handleSave}
             disabled={isSubmitting || !areTimeInputsValid}
-            className="rounded-none h-10 text-sm font-medium tracking-wide"
+            className="rounded-none h-10 text-sm font-medium tracking-wide cursor-pointer"
           >
             {isSubmitting && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
             {t("admin.users.details.update")}

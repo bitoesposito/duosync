@@ -78,7 +78,7 @@ export function RecurrenceSection({
               size="sm"
               onClick={() => handlePresetClick(ALL_WEEK)}
               disabled={disabled}
-              className="flex-1 h-7 text-xs rounded-none"
+              className="flex-1 h-7 text-xs rounded-none cursor-pointer"
             >
               {t("form.quickSelect.allWeek")}
             </Button>
@@ -88,7 +88,7 @@ export function RecurrenceSection({
               size="sm"
               onClick={() => handlePresetClick(WEEKEND)}
               disabled={disabled}
-              className="flex-1 h-7 text-xs rounded-none"
+              className="flex-1 h-7 text-xs rounded-none cursor-pointer"
             >
               {t("form.quickSelect.weekend")}
             </Button>

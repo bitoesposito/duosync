@@ -49,7 +49,22 @@ export const recurringAppointments = pgTable("recurring_appointments", {
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
+// Push subscriptions table: stores push notification subscriptions for users
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(), // Public key for encryption
+  auth: text("auth").notNull(), // Auth secret for encryption
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
 // Indexes for efficient queries
 export const appointmentsUserIdDateIndex = sql`CREATE INDEX IF NOT EXISTS appointments_userId_date_idx ON appointments("userId", "date")`;
 export const recurringAppointmentsUserIdIndex = sql`CREATE INDEX IF NOT EXISTS recurring_appointments_userId_idx ON recurring_appointments("userId")`;
+export const pushSubscriptionsUserIdIndex = sql`CREATE INDEX IF NOT EXISTS push_subscriptions_userId_idx ON push_subscriptions("userId")`;
+export const pushSubscriptionsEndpointIndex = sql`CREATE INDEX IF NOT EXISTS push_subscriptions_endpoint_idx ON push_subscriptions("endpoint")`;
 

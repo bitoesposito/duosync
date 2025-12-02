@@ -7,6 +7,7 @@ import {
   AppointmentFormData,
   AppointmentFormState,
   AppointmentValidationResult,
+  DayId,
 } from "@/types";
 import {
   wouldOverlap,
@@ -19,6 +20,20 @@ import {
 // ============================================================================
 
 const defaultIdFactory = () => Date.now().toString();
+
+/**
+ * Sorts repeatDays array in logical order (1-7, Monday to Sunday).
+ * Ensures consistent display and storage of repeat days.
+ * @param repeatDays - Array of day IDs to sort
+ * @returns Sorted array of day IDs in ascending order (1-7)
+ */
+export function sortRepeatDays(repeatDays: DayId[]): DayId[] {
+  return [...repeatDays].sort((a, b) => {
+    const numA = parseInt(a, 10);
+    const numB = parseInt(b, 10);
+    return numA - numB;
+  });
+}
 
 /**
  * Normalizes the raw form state into a clean AppointmentFormData object.
@@ -44,7 +59,7 @@ export function buildAppointmentFormData(
     category: state.category,
     description: state.description?.trim() || undefined,
     isRepeating: state.isRepeating,
-    repeatDays: state.repeatDays,
+    repeatDays: state.repeatDays.length > 0 ? sortRepeatDays(state.repeatDays) : [],
   };
 }
 

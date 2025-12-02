@@ -112,6 +112,13 @@
       "title": "Salvataggio non riuscito",
       "description": "Controlla la connessione e riprova."
     },
+    "updateSuccess": {
+      "title": "Impegno aggiornato"
+    },
+    "updateError": {
+      "title": "Aggiornamento non riuscito",
+      "description": "Controlla la connessione e riprova."
+    },
     "deleteSuccess": {
       "title": "Impegno eliminato"
     },
@@ -124,6 +131,10 @@
     "confirm": {
       "title": "Impegni confermati",
       "body": "Apri l'app per aggiornare gli impegni"
+    },
+    "received": {
+      "title": "Nuova conferma impegni",
+      "body": "Un utente ha confermato i propri impegni. Compila i tuoi impegni per verificare le disponibilità condivise."
     }
   },
   "settings": {

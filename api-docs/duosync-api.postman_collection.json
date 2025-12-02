@@ -324,6 +324,105 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Get VAPID Public Key",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/vapid-public-key",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "notifications", "vapid-public-key"]
+						},
+						"description": "Returns the VAPID public key for client-side push subscription. This key is used by the browser to subscribe to push notifications."
+					}
+				},
+				{
+					"name": "Subscribe to Push Notifications",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": {{userId}},\n  \"subscription\": {\n    \"endpoint\": \"{{pushEndpoint}}\",\n    \"keys\": {\n      \"p256dh\": \"{{p256dhKey}}\",\n      \"auth\": \"{{authKey}}\"\n    }\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/subscribe",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "notifications", "subscribe"]
+						},
+						"description": "Registers a push notification subscription for a user. If a subscription with the same endpoint exists, it updates it. The subscription object is obtained from the browser's PushManager API."
+					}
+				},
+				{
+					"name": "Unsubscribe from Push Notifications",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"endpoint\": \"{{pushEndpoint}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/subscribe",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "notifications", "subscribe"]
+						},
+						"description": "Unsubscribes a user from push notifications by removing their subscription from the database."
+					}
+				},
+				{
+					"name": "Confirm Appointments (Send Notifications)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": {{userId}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/confirm",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "notifications", "confirm"]
+						},
+						"description": "Sends push notifications to all other users when a user confirms their appointments. This endpoint is called when a user clicks the 'Confirm' button in the appointments list. All other users who have subscribed to push notifications will receive a notification."
+					}
+				}
+			]
 		}
 	]
 }

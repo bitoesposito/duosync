@@ -35,7 +35,7 @@ export function QuickActions({
           size="sm"
           onClick={() => onQuickAction(60)}
           disabled={baseDisabled || !isQuickActionValid(60)}
-          className="h-9 px-4 text-sm border border-border rounded-sm bg-transparent hover:bg-muted flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-9 px-4 text-sm border border-border rounded-sm bg-transparent hover:bg-muted flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           1h
         </Button>
@@ -45,7 +45,7 @@ export function QuickActions({
           size="sm"
           onClick={() => onQuickAction(120)}
           disabled={baseDisabled || !isQuickActionValid(120)}
-          className="h-9 px-4 text-sm border border-border rounded-sm bg-transparent hover:bg-muted flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-9 px-4 text-sm border border-border rounded-sm bg-transparent hover:bg-muted flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           2h
         </Button>
@@ -55,7 +55,7 @@ export function QuickActions({
           size="sm"
           onClick={() => onQuickAction("endOfDay")}
           disabled={baseDisabled || !isQuickActionValid("endOfDay")}
-          className="h-9 px-4 text-sm border border-border rounded-sm bg-transparent hover:bg-muted whitespace-nowrap flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-9 px-4 text-sm border border-border rounded-sm bg-transparent hover:bg-muted whitespace-nowrap flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           {t("form.endOfDay")}
         </Button>

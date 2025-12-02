@@ -174,10 +174,11 @@ export default function PWAOnboarding() {
               variant="outline"
               onClick={handleDismissInstall}
               disabled={isInstalling}
+              className="cursor-pointer"
             >
               {t("onboarding.install.dismiss")}
             </Button>
-            <Button onClick={handleInstall} disabled={isInstalling}>
+            <Button onClick={handleInstall} disabled={isInstalling} className="cursor-pointer">
               {isInstalling
                 ? t("onboarding.install.installing")
                 : t("onboarding.install.install")}
@@ -211,10 +212,11 @@ export default function PWAOnboarding() {
             <Button
               variant="outline"
               onClick={handleDismissNotifications}
+              className="cursor-pointer"
             >
               {t("onboarding.notifications.dismiss")}
             </Button>
-            <Button onClick={handleEnableNotifications}>
+            <Button onClick={handleEnableNotifications} className="cursor-pointer">
               {t("onboarding.notifications.enable")}
             </Button>
           </DialogFooter>

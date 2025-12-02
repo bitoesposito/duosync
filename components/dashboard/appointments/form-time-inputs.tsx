@@ -306,7 +306,7 @@ export function TimeInputs({
           </Label>
           <ButtonGroup className="w-full overflow-x-auto border border-border rounded-none p-0.5">
             <Button
-              className="flex-1 gap-2 cursor-pointer rounded-none border-none shadow-none h-9 text-sm"
+              className="flex-1 gap-2 cursor-pointer rounded-none border-none shadow-none h-9 text-sm cursor-pointer"
               variant={mode === "duration" ? "secondary" : "ghost"}
               onClick={() => setMode("duration")}
               disabled={isModeToggleDisabled}
@@ -314,7 +314,7 @@ export function TimeInputs({
               {t("form.modeDuration")}
             </Button>
             <Button
-              className="flex-1 gap-2 cursor-pointer rounded-none border-none shadow-none h-9 text-sm"
+              className="flex-1 gap-2 cursor-pointer rounded-none border-none shadow-none h-9 text-sm cursor-pointer"
               variant={mode === "endTime" ? "secondary" : "ghost"}
               onClick={() => setMode("endTime")}
               disabled={isModeToggleDisabled}

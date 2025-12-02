@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { TrashIcon, RepeatIcon, PencilIcon } from "lucide-react";
 import { Appointment, DayId } from "@/types";
 import { useI18n } from "@/i18n";
+import { sortRepeatDays } from "@/features/appointments";
 
 type AppointmentsListItemProps = {
   // Single appointment to display in the list
@@ -31,9 +32,11 @@ export default function AppointmentsListItem({
   const categoryLabel = t(`common.categories.${category}`);
 
   // Build repeat label using first letter of translated day names
+  // Sort days to ensure consistent display order (Mon-Sun)
+  const sortedRepeatDays = isRepeating && repeatDays.length > 0 ? sortRepeatDays(repeatDays) : [];
   const repeatLabel =
-    isRepeating && repeatDays.length > 0
-      ? repeatDays.map((d: DayId) => t(`common.days.${d}`).slice(0, 3)).join(", ")
+    sortedRepeatDays.length > 0
+      ? sortedRepeatDays.map((d: DayId) => t(`common.days.${d}`).slice(0, 3)).join(", ")
       : null;
 
   const isSleep = category === "sleep";
@@ -81,7 +84,7 @@ export default function AppointmentsListItem({
               size="icon"
               variant="ghost"
               aria-label={t("admin.users.appointments.edit")}
-              className="text-muted-foreground hover:text-foreground hover:bg-transparent rounded-none h-6 w-6 cursor-pointer disabled:opacity-50"
+              className="text-muted-foreground hover:text-foreground hover:bg-transparent rounded-none h-6 w-6 cursor-pointer disabled:opacity-50 cursor-pointer"
               onClick={onEdit}
               disabled={disabled}
             >
@@ -94,7 +97,7 @@ export default function AppointmentsListItem({
               size="icon"
               variant="ghost"
               aria-label={t("list.removeAriaLabel")}
-              className="text-muted-foreground hover:text-destructive hover:bg-transparent rounded-none h-6 w-6 cursor-pointer disabled:opacity-50"
+              className="text-muted-foreground hover:text-destructive hover:bg-transparent rounded-none h-6 w-6 cursor-pointer disabled:opacity-50 cursor-pointer"
               onClick={onRemove}
               disabled={disabled}
             >

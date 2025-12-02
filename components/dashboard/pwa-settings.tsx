@@ -93,7 +93,7 @@ export default function PWASettings() {
                 onClick={handleInstall}
                 disabled={!isInstallable || isInstalling}
                 size="sm"
-                className="rounded-none font-medium"
+                className="rounded-none font-medium cursor-pointer"
               >
                 <DownloadIcon className="w-4 h-4 mr-2" />
                 {isInstalling
