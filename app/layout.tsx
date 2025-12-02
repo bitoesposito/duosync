@@ -26,7 +26,7 @@ const ibmPlexSans = IBM_Plex_Sans({
  * Reads locale from cookies (set by client-side I18nProvider) or Accept-Language header.
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const locale = detectServerLocale();
+  const locale = await detectServerLocale();
   const t = getMetadataTranslations(locale);
   const ogLocale = getOpenGraphLocale(locale);
 
@@ -37,13 +37,22 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: t.description,
     keywords: t.keywords.split(", "),
-    authors: [{ name: "DuoSync Team" }],
-    creator: "DuoSync",
-    publisher: "DuoSync",
+    authors: [{ name: "Vito Esposito" }],
+    creator: "Vito Esposito",
+    publisher: "Vito Esposito",
     applicationName: "DuoSync",
     manifest: "/manifest.json",
+    icons: {
+      icon: [
+        { url: "/favicon.ico", sizes: "any" },
+        { url: "/favicon.svg", type: "image/svg+xml" },
+      ],
+      apple: [
+        { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      ],
+    },
     metadataBase: new URL(
-      process.env.NEXT_PUBLIC_BASE_URL || "https://duosync.app"
+      process.env.NEXT_PUBLIC_BASE_URL || "https://duosync.vitoesposito.it"
     ),
     alternates: {
       canonical: "/",
@@ -105,7 +114,7 @@ export default async function RootLayout({
 }>) {
   // Detect locale server-side for initial HTML lang attribute
   // Client-side I18nProvider will update it if needed
-  const initialLocale = detectServerLocale();
+  const initialLocale = await detectServerLocale();
 
   return (
     <html lang={initialLocale} suppressHydrationWarning>

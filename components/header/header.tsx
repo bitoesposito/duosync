@@ -16,6 +16,7 @@ import { useUsers } from "@/features/users";
 import { useI18n } from "@/i18n";
 import SettingsMenu from "./settings-menu";
 import HeaderUserSkeleton from "./header-user-skeleton";
+import Logo from "./logo";
 import Link from "next/link";
 
 import { usePathname } from "next/navigation";
@@ -39,14 +40,14 @@ export default function Header() {
       <div id="logo" className="flex items-center gap-2 select-none">
         {pathname === "/" ? (
           <div className="flex items-center gap-2">
-            <UsersIcon className="w-6 h-6 text-foreground" />
+            <Logo className="w-6 h-6" />
             <p className="font-medium text-lg text-foreground tracking-tight">
               {t("header.appName")}
             </p>
           </div>
         ) : (
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <UsersIcon className="w-6 h-6 text-foreground" />
+            <Logo className="w-6 h-6" />
             <p className="font-medium text-lg text-foreground tracking-tight">
               {t("header.appName")}
             </p>

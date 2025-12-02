@@ -21,10 +21,11 @@ const messages = {
  * Used server-side in generateMetadata functions.
  * @returns The detected locale
  */
-export function detectServerLocale(): Locale {
+export async function detectServerLocale(): Promise<Locale> {
   try {
     // Try to read locale from cookie (set by client-side I18nProvider)
-    const cookieStore = cookies();
+    // In Next.js 16, cookies() returns a Promise and must be awaited
+    const cookieStore = await cookies();
     const localeCookie = cookieStore.get("duosync.locale");
     
     if (localeCookie?.value && SUPPORTED_LOCALES.includes(localeCookie.value as Locale)) {
@@ -32,7 +33,8 @@ export function detectServerLocale(): Locale {
     }
 
     // Fall back to Accept-Language header
-    const headersList = headers();
+    // In Next.js 16, headers() returns a Promise and must be awaited
+    const headersList = await headers();
     const acceptLanguage = headersList.get("accept-language");
     
     if (acceptLanguage) {
