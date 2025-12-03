@@ -4,7 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0 --webpack",
-    "dev:docker": "docker compose up --build",
+    "dev:docker": "docker compose -f docker/docker-compose.yml up --build",
+    "dev:docker:down": "docker compose -f docker/docker-compose.yml down",
+    "dev:docker:logs": "docker compose -f docker/docker-compose.yml logs -f",
+    "prod:docker": "docker compose -f docker/docker-compose.prod.yml up --build",
+    "prod:docker:down": "docker compose -f docker/docker-compose.prod.yml down",
+    "prod:docker:logs": "docker compose -f docker/docker-compose.prod.yml logs -f",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

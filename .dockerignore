@@ -27,8 +27,7 @@ README.md
 *.md
 
 # Docker
-docker-compose.yml
-Dockerfile
+docker/
 .dockerignore
 
 # Misc
