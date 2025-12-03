@@ -112,10 +112,12 @@ export function useNotifications() {
         const subscription = await subscribeToPush(registration, vapidPublicKey);
         
         if (!subscription || cancelled) {
+          console.warn("Failed to get push subscription for user", activeUser.id);
           return;
         }
 
         // Send subscription to server
+        // This will update the subscription if it already exists (same endpoint, different user)
         const response = await fetch("/api/notifications/subscribe", {
           method: "POST",
           headers: {
@@ -134,7 +136,13 @@ export function useNotifications() {
         });
 
         if (!response.ok && !cancelled) {
-          console.error("Failed to register push subscription on server");
+          const errorText = await response.text().catch(() => "Unknown error");
+          console.error("Failed to register push subscription on server:", response.status, errorText);
+        } else if (response.ok && !cancelled) {
+          // Log successful registration for debugging
+          if (process.env.NODE_ENV !== "production") {
+            console.log(`Push subscription registered for user ${activeUser.id}`);
+          }
         }
       } catch (error) {
         if (!cancelled) {

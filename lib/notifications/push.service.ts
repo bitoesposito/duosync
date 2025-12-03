@@ -5,7 +5,7 @@
 
 import webpush from "web-push";
 import { db, schema } from "@/lib/db";
-import { eq, ne } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 /**
  * VAPID keys configuration.
@@ -34,9 +34,12 @@ export function initializeVapidKeys(): void {
       publicKey: generated.publicKey,
       privateKey: generated.privateKey,
     };
-    console.log("Generated VAPID keys (save these to .env):");
-    console.log(`VAPID_PUBLIC_KEY=${generated.publicKey}`);
-    console.log(`VAPID_PRIVATE_KEY=${generated.privateKey}`);
+    // Only log VAPID keys in development mode
+    if (process.env.NODE_ENV !== "production") {
+      console.log("Generated VAPID keys (save these to .env):");
+      console.log(`VAPID_PUBLIC_KEY=${generated.publicKey}`);
+      console.log(`VAPID_PRIVATE_KEY=${generated.privateKey}`);
+    }
   }
 
   // Set VAPID details for web-push
@@ -96,8 +99,13 @@ export async function sendPushNotification(
     // If subscription is invalid (expired, revoked, etc.), we should remove it from DB
     if (error && typeof error === "object" && "statusCode" in error) {
       const statusCode = error.statusCode as number;
-      if (statusCode === 410 || statusCode === 404) {
-        // Subscription expired or not found - remove from database
+      // Remove subscription for these error codes:
+      // 410: Gone (subscription expired)
+      // 404: Not Found (subscription doesn't exist)
+      // 403: Forbidden (subscription revoked or invalid)
+      // 400: Bad Request (malformed subscription)
+      if (statusCode === 410 || statusCode === 404 || statusCode === 403 || statusCode === 400) {
+        // Subscription expired, not found, revoked, or invalid - remove from database
         await db
           .delete(schema.pushSubscriptions)
           .where(eq(schema.pushSubscriptions.endpoint, subscription.endpoint));
@@ -109,12 +117,10 @@ export async function sendPushNotification(
 }
 
 /**
- * Sends push notifications to all users except the sender.
- * @param senderUserId - The ID of the user who triggered the notification
+ * Sends push notifications to all users who have push notifications enabled.
  * @param payload - The notification payload
  */
-export async function sendPushToOtherUsers(
-  senderUserId: number,
+export async function sendPushToAllUsers(
   payload: {
     title: string;
     body?: string;
@@ -123,17 +129,26 @@ export async function sendPushToOtherUsers(
   }
 ): Promise<{ sent: number; failed: number }> {
   try {
-    // Get all push subscriptions for users OTHER than the sender
-    const otherSubscriptions = await db
+    // Get all push subscriptions (all users with notifications enabled)
+    const allSubscriptions = await db
       .select()
-      .from(schema.pushSubscriptions)
-      .where(ne(schema.pushSubscriptions.userId, senderUserId));
+      .from(schema.pushSubscriptions);
+
+    // Log for debugging
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`Sending notifications to ${allSubscriptions.length} subscriptions`);
+    }
+
+    if (allSubscriptions.length === 0) {
+      console.warn("No push subscriptions found");
+      return { sent: 0, failed: 0 };
+    }
 
     let sent = 0;
     let failed = 0;
 
     // Send notification to each subscription
-    for (const sub of otherSubscriptions) {
+    for (const sub of allSubscriptions) {
       try {
         await sendPushNotification(
           {
@@ -146,8 +161,11 @@ export async function sendPushToOtherUsers(
           payload
         );
         sent++;
+        if (process.env.NODE_ENV !== "production") {
+          console.log(`Notification sent successfully to user ${sub.userId} (endpoint: ${sub.endpoint.substring(0, 50)}...)`);
+        }
       } catch (error) {
-        console.error(`Failed to send push notification to ${sub.endpoint}:`, error);
+        console.error(`Failed to send push notification to user ${sub.userId} (endpoint: ${sub.endpoint.substring(0, 50)}...):`, error);
         failed++;
       }
     }

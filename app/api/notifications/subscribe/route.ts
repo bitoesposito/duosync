@@ -46,7 +46,8 @@ export async function POST(request: Request) {
       .limit(1);
 
     if (existing.length > 0) {
-      // Update existing subscription (user might have switched accounts)
+      // Update existing subscription (user might have switched accounts or same device)
+      const oldUserId = existing[0].userId;
       await db
         .update(schema.pushSubscriptions)
         .set({
@@ -56,6 +57,10 @@ export async function POST(request: Request) {
           updatedAt: new Date(),
         })
         .where(eq(schema.pushSubscriptions.endpoint, endpoint));
+      
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`Updated push subscription: endpoint exists, changed from user ${oldUserId} to user ${userId}`);
+      }
     } else {
       // Create new subscription
       await db.insert(schema.pushSubscriptions).values({
@@ -64,6 +69,10 @@ export async function POST(request: Request) {
         p256dh: keys.p256dh,
         auth: keys.auth,
       });
+      
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`Created new push subscription for user ${userId}`);
+      }
     }
 
     return NextResponse.json({ success: true });

@@ -70,11 +70,10 @@ export default function AppointmentsList() {
       });
 
       if (!response.ok) {
-        console.error("Failed to send confirmation notifications");
-      } else {
-        const result = await response.json();
-        console.log(`Notifications sent: ${result.sent}, failed: ${result.failed}`);
+        const errorText = await response.text().catch(() => "Unknown error");
+        console.error("Failed to send confirmation notifications:", response.status, errorText);
       }
+      // Note: We don't log success metrics here as they're not needed in production
 
       // Also show a local notification for feedback
       if (isSupported && permission === "granted" && isReady) {
@@ -111,7 +110,6 @@ export default function AppointmentsList() {
    */
   const handleConfirm = () => {
     if (!activeUser?.id) {
-      console.warn("No active user selected");
       return;
     }
 
