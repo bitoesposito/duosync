@@ -66,6 +66,19 @@ export default function AppointmentsForm() {
     }
   }, [activeUser, isLoading, startTime, hasUserEditedTimes, appointments]);
 
+  // Update start time to first available slot when appointments change (e.g., after deletion)
+  // This ensures the form always shows the first available time slot after any appointment is deleted
+  // Only updates if user hasn't manually edited times
+  useEffect(() => {
+    if (activeUser && !isLoading && startTime && !hasUserEditedTimes && appointments) {
+      const firstSlot = findFirstAvailableSlot(appointments);
+      if (firstSlot && firstSlot !== startTime) {
+        setStartTime(firstSlot);
+        // Don't set hasUserEditedTimes to true for auto-update after deletion
+      }
+    }
+  }, [activeUser, isLoading, appointments, hasUserEditedTimes]); // Removed startTime from dependencies to prevent loop
+
   // Track when user manually changes times
   const handleStartTimeChange = useCallback(
     (value: string) => {

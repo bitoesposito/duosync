@@ -10,7 +10,6 @@ import { useAppointments } from "@/features/appointments";
 import { useI18n } from "@/i18n";
 import { useUsers } from "@/features/users";
 import { TimelineSegmentCategory } from "@/types";
-import { useOtherUserAppointments } from "@/hooks/use-other-user-appointments";
 import { AvailabilityGridHeader } from "./availability-grid-header";
 import { TimelineBar } from "./availability-timeline-bar";
 
@@ -33,16 +32,15 @@ const sharedColorMap: Record<TimelineSegmentCategory, string> = {
 
 /**
  * Availability grid component that displays personal and shared timelines.
- * Shows when both users are free (match) and personal availability.
+ * Shows when all users are free (match) and personal availability.
  */
 export default function AvailabilityGrid() {
-  const { appointments, isLoading } = useAppointments();
+  const { appointments, isLoading, allOtherUsersAppointments } = useAppointments();
   const { users, activeUser } = useUsers();
   const { t } = useI18n();
 
-  const otherUser = users.find((u) => u.id !== activeUser?.id);
-  const { appointments: otherUserAppointments, isLoading: isLoadingOther } =
-    useOtherUserAppointments(otherUser?.id);
+  // Get all other users (excluding the active user)
+  const otherUsers = users.filter((u) => u.id !== activeUser?.id);
 
   // Memoize timeline segments to avoid recalculating on every render
   const personalSegments = useMemo(
@@ -50,20 +48,27 @@ export default function AvailabilityGrid() {
     [appointments]
   );
 
-  const allSharedSegments = useMemo(
-    () =>
-      otherUser && !isLoadingOther
-        ? buildSharedTimelineSegments(appointments, otherUserAppointments)
-        : [],
-    [otherUser, isLoadingOther, appointments, otherUserAppointments]
-  );
+  // Build shared segments using all other users' appointments
+  const allSharedSegments = useMemo(() => {
+    if (!allOtherUsersAppointments || otherUsers.length === 0 || isLoading) {
+      return [];
+    }
+
+    // Convert Record<number, Appointment[]> to Appointment[][]
+    // Include all users, even if they have no appointments (empty array)
+    const allOtherUsersAppointmentsArray = otherUsers.map(
+      (user) => allOtherUsersAppointments[user.id] || []
+    );
+
+    return buildSharedTimelineSegments(appointments, allOtherUsersAppointmentsArray);
+  }, [allOtherUsersAppointments, otherUsers, appointments, isLoading]);
 
   const sharedSegments = useMemo(
     () => allSharedSegments.filter((segment) => segment.category === "match"),
     [allSharedSegments]
   );
 
-  const isLoadingGrid = isLoading || isLoadingOther;
+  const isLoadingGrid = isLoading;
 
   const legendItems: { category: TimelineSegmentCategory; label: string }[] = [
     { category: "available", label: t("availability.legendAvailable") },
@@ -104,7 +109,7 @@ export default function AvailabilityGrid() {
           />
         </div>
 
-        {otherUser && (
+        {otherUsers.length > 0 && (
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <SparklesIcon className="w-4 h-4 text-emerald-500" />

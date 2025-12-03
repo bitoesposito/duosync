@@ -131,7 +131,8 @@ export type TimelineSegment = {
 export type AppointmentsContextValue = {
   appointments: Appointment[]; // Active appointments for today (one-time + recurring active today)
   recurringTemplates: Appointment[]; // All recurring templates (not filtered by date)
-  otherUserAppointments?: Appointment[]; // Appointments for the other user (when available from batch fetch)
+  otherUserAppointments?: Appointment[]; // Appointments for the other user (when available from batch fetch) - DEPRECATED: use allOtherUsersAppointments instead
+  allOtherUsersAppointments?: Record<number, Appointment[]>; // Appointments for all other users (keyed by userId)
   addAppointment: (data: AppointmentFormData) => void;
   updateAppointment: (id: string, appointment: Appointment) => Promise<void>;
   removeAppointment: (id: string) => void;

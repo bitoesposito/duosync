@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useNotifications } from "@/hooks";
 import { useI18n } from "@/i18n";
+import { usePWAPrompt } from "@/features/pwa/pwa-prompt-context";
 
 const STORAGE_KEYS = {
   INSTALL_PROMPT_DISMISSED: "duosync.installPromptDismissed",
@@ -22,77 +23,72 @@ const STORAGE_KEYS = {
 
 /**
  * Main component that handles PWA onboarding prompts.
- * Shows install prompt and notification permission prompt when appropriate.
+ * Shows install prompt and notification permission prompt when triggered programmatically.
  */
 export default function PWAOnboarding() {
   const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
   const { isSupported, permission, requestPermission, isReady } =
     useNotifications();
   const { t } = useI18n();
+  const {
+    isInstallPromptVisible,
+    isNotificationPromptVisible,
+    showNotificationPrompt,
+  } = usePWAPrompt();
 
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
+  const [installButtonsDisabled, setInstallButtonsDisabled] = useState(false);
+  const [notificationButtonsDisabled, setNotificationButtonsDisabled] = useState(false);
+  
+  // Track dismissed state from localStorage to avoid hydration mismatches
+  const [isInstallPromptDismissed, setIsInstallPromptDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !!localStorage.getItem(STORAGE_KEYS.INSTALL_PROMPT_DISMISSED);
+  });
+  
+  const [isNotificationPromptDismissed, setIsNotificationPromptDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !!localStorage.getItem(STORAGE_KEYS.NOTIFICATION_PROMPT_DISMISSED);
+  });
 
-  // Check if prompts should be shown on mount
+  // Check if install prompt should actually be shown
+  // Only show if app is installable, not installed, and not dismissed
+  const shouldShowInstallPrompt =
+    isInstallPromptVisible &&
+    isInstallable &&
+    !isInstalled &&
+    !isInstallPromptDismissed;
+
+  // Check if notification prompt should actually be shown
+  // Only show if notifications are supported, permission is default, and not dismissed
+  const shouldShowNotificationPrompt =
+    isNotificationPromptVisible &&
+    isSupported &&
+    permission === "default" &&
+    isReady &&
+    !isNotificationPromptDismissed;
+
+  // Disable install buttons for 500ms when dialog opens to prevent accidental clicks
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    // Check if install prompt was already dismissed
-    const installDismissed = localStorage.getItem(
-      STORAGE_KEYS.INSTALL_PROMPT_DISMISSED
-    );
-    // Check if notification prompt was already dismissed
-    const notificationDismissed = localStorage.getItem(
-      STORAGE_KEYS.NOTIFICATION_PROMPT_DISMISSED
-    );
-
-    // Show install prompt if:
-    // - App is installable
-    // - Not already installed
-    // - Not already dismissed
-    // - Wait a bit for the page to load
-    if (
-      isInstallable &&
-      !isInstalled &&
-      !installDismissed &&
-      !showInstallPrompt
-    ) {
+    if (shouldShowInstallPrompt) {
+      setInstallButtonsDisabled(true);
       const timer = setTimeout(() => {
-        setShowInstallPrompt(true);
-      }, 2000); // Show after 2 seconds
+        setInstallButtonsDisabled(false);
+      }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isInstallable, isInstalled, showInstallPrompt]);
+  }, [shouldShowInstallPrompt]);
 
-  // Show notification prompt after install prompt is handled
+  // Disable notification buttons for 500ms when dialog opens to prevent accidental clicks
   useEffect(() => {
-    if (
-      !showInstallPrompt &&
-      isSupported &&
-      permission === "default" &&
-      isReady
-    ) {
-      const notificationDismissed = localStorage.getItem(
-        STORAGE_KEYS.NOTIFICATION_PROMPT_DISMISSED
-      );
-
-      if (!notificationDismissed && !showNotificationPrompt) {
-        const timer = setTimeout(() => {
-          setShowNotificationPrompt(true);
-        }, 1000);
-        return () => clearTimeout(timer);
-      }
+    if (shouldShowNotificationPrompt) {
+      setNotificationButtonsDisabled(true);
+      const timer = setTimeout(() => {
+        setNotificationButtonsDisabled(false);
+      }, 500);
+      return () => clearTimeout(timer);
     }
-  }, [
-    showInstallPrompt,
-    isSupported,
-    permission,
-    isReady,
-    showNotificationPrompt,
-  ]);
+  }, [shouldShowNotificationPrompt]);
 
   /**
    * Handles install button click.
@@ -103,12 +99,13 @@ export default function PWAOnboarding() {
     setIsInstalling(false);
 
     if (accepted) {
-      setShowInstallPrompt(false);
       // Don't mark as dismissed if user accepted
     } else {
       // User dismissed, remember it
-      localStorage.setItem(STORAGE_KEYS.INSTALL_PROMPT_DISMISSED, "true");
-      setShowInstallPrompt(false);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(STORAGE_KEYS.INSTALL_PROMPT_DISMISSED, "true");
+        setIsInstallPromptDismissed(true);
+      }
     }
   };
 
@@ -116,8 +113,10 @@ export default function PWAOnboarding() {
    * Handles install prompt dismissal.
    */
   const handleDismissInstall = () => {
-    localStorage.setItem(STORAGE_KEYS.INSTALL_PROMPT_DISMISSED, "true");
-    setShowInstallPrompt(false);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEYS.INSTALL_PROMPT_DISMISSED, "true");
+      setIsInstallPromptDismissed(true);
+    }
   };
 
   /**
@@ -125,39 +124,44 @@ export default function PWAOnboarding() {
    */
   const handleEnableNotifications = async () => {
     const granted = await requestPermission();
-    if (granted) {
-      setShowNotificationPrompt(false);
-      // Don't mark as dismissed if user accepted
-    } else {
+    if (!granted) {
       // User denied, remember it
-      localStorage.setItem(
-        STORAGE_KEYS.NOTIFICATION_PROMPT_DISMISSED,
-        "true"
-      );
-      setShowNotificationPrompt(false);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          STORAGE_KEYS.NOTIFICATION_PROMPT_DISMISSED,
+          "true"
+        );
+        setIsNotificationPromptDismissed(true);
+      }
     }
+    // Don't mark as dismissed if user accepted - they can use notifications now
   };
 
   /**
    * Handles notification prompt dismissal.
    */
   const handleDismissNotifications = () => {
-    localStorage.setItem(STORAGE_KEYS.NOTIFICATION_PROMPT_DISMISSED, "true");
-    setShowNotificationPrompt(false);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEYS.NOTIFICATION_PROMPT_DISMISSED, "true");
+      setIsNotificationPromptDismissed(true);
+    }
   };
 
   return (
     <>
       {/* Install Prompt */}
       <Dialog
-        open={showInstallPrompt}
-        onOpenChange={(open: boolean) => {
-          if (!open) {
-            handleDismissInstall();
-          }
+        open={shouldShowInstallPrompt}
+        onOpenChange={() => {
+          // Prevent closing by clicking backdrop
         }}
       >
-        <DialogContent showCloseButton={false}>
+        <DialogContent
+          showCloseButton={false}
+          onInteractOutside={(e: Event) => {
+            e.preventDefault();
+          }}
+        >
           <DialogHeader>
             <div className="flex items-center gap-3 mb-2">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
@@ -169,16 +173,20 @@ export default function PWAOnboarding() {
               {t("onboarding.install.description")}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2">
             <Button
               variant="outline"
               onClick={handleDismissInstall}
-              disabled={isInstalling}
+              disabled={isInstalling || installButtonsDisabled}
               className="cursor-pointer"
             >
               {t("onboarding.install.dismiss")}
             </Button>
-            <Button onClick={handleInstall} disabled={isInstalling} className="cursor-pointer">
+            <Button 
+              onClick={handleInstall} 
+              disabled={isInstalling || installButtonsDisabled} 
+              className="cursor-pointer"
+            >
               {isInstalling
                 ? t("onboarding.install.installing")
                 : t("onboarding.install.install")}
@@ -189,14 +197,17 @@ export default function PWAOnboarding() {
 
       {/* Notification Prompt */}
       <Dialog
-        open={showNotificationPrompt}
-        onOpenChange={(open: boolean) => {
-          if (!open) {
-            handleDismissNotifications();
-          }
+        open={shouldShowNotificationPrompt}
+        onOpenChange={() => {
+          // Prevent closing by clicking backdrop
         }}
       >
-        <DialogContent showCloseButton={false}>
+        <DialogContent
+          showCloseButton={false}
+          onInteractOutside={(e: Event) => {
+            e.preventDefault();
+          }}
+        >
           <DialogHeader>
             <div className="flex items-center gap-3 mb-2">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
@@ -208,15 +219,20 @@ export default function PWAOnboarding() {
               {t("onboarding.notifications.description")}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="flex gap-2">
             <Button
               variant="outline"
               onClick={handleDismissNotifications}
+              disabled={notificationButtonsDisabled}
               className="cursor-pointer"
             >
               {t("onboarding.notifications.dismiss")}
             </Button>
-            <Button onClick={handleEnableNotifications} className="cursor-pointer">
+            <Button
+              onClick={handleEnableNotifications}
+              disabled={notificationButtonsDisabled}
+              className="cursor-pointer"
+            >
               {t("onboarding.notifications.enable")}
             </Button>
           </DialogFooter>
@@ -225,4 +241,3 @@ export default function PWAOnboarding() {
     </>
   );
 }
-

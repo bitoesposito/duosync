@@ -87,150 +87,192 @@ export function buildTimelineSegments(
 }
 
 /**
+ * Pre-parsed appointment time range for efficient overlap checking.
+ */
+type ParsedAppointmentRange = {
+  startMinutes: number;
+  endMinutes: number;
+  category: string;
+};
+
+/**
+ * Converts time string to minutes since midnight for efficient comparison.
+ */
+function timeToMinutes(time: string): number {
+  if (time === DAY_END) {
+    return 23 * 60 + 59; // 1439 minutes
+  }
+  const parsed = dayjs(time, HOUR_FORMAT);
+  return parsed.diff(dayStart, "minute");
+}
+
+/**
+ * Pre-parses appointments into minute-based ranges for efficient overlap checking.
+ */
+function parseAppointmentsToRanges(appointments: Appointment[]): ParsedAppointmentRange[] {
+  return appointments.map((apt) => ({
+    startMinutes: timeToMinutes(apt.startTime),
+    endMinutes: timeToMinutes(apt.endTime),
+    category: apt.category,
+  }));
+}
+
+/**
  * Checks if a time range overlaps with any appointment (excluding sleep, which is handled separately).
+ * Optimized version using pre-parsed minute ranges.
  */
 function isTimeRangeOccupied(
-  startTime: string,
-  endTime: string,
-  appointments: Appointment[]
+  startMinutes: number,
+  endMinutes: number,
+  parsedRanges: ParsedAppointmentRange[]
 ): boolean {
-  const start = dayjs(startTime, HOUR_FORMAT);
-  const end = dayjs(endTime, HOUR_FORMAT);
-
-  return appointments.some((appointment) => {
+  return parsedRanges.some((range) => {
     // Skip sleep appointments - they are handled separately
-    if (appointment.category === "sleep") {
+    if (range.category === "sleep") {
       return false;
     }
     
-    const appointmentStart = dayjs(appointment.startTime, HOUR_FORMAT);
-    const appointmentEnd = dayjs(appointment.endTime, HOUR_FORMAT);
-
-    // Check for overlap
-    return (
-      start.isBefore(appointmentEnd) && end.isAfter(appointmentStart)
-    );
+    // Check for overlap: start < rangeEnd && end > rangeStart
+    return startMinutes < range.endMinutes && endMinutes > range.startMinutes;
   });
 }
 
 /**
- * Gets the category for a time segment based on both users' appointments.
- * Priority: sleep (if either user is sleeping) > other (if current user is busy) > match (both free) > available (only current user free)
+ * Gets the category for a time segment based on all users' appointments.
+ * Priority: sleep (if any user is sleeping) > other (if current user is busy) > match (all users free) > available (only current user free)
+ * Optimized version using pre-parsed appointment ranges.
+ * @param startMinutes - Start time in minutes since midnight
+ * @param endMinutes - End time in minutes since midnight
+ * @param currentUserRanges - Pre-parsed appointment ranges for current user
+ * @param allOtherUsersRanges - Array of pre-parsed appointment ranges for all other users
+ * @returns Category for the segment
  */
 function getSegmentCategory(
-  startTime: string,
-  endTime: string,
-  currentUserAppointments: Appointment[],
-  otherUserAppointments: Appointment[]
+  startMinutes: number,
+  endMinutes: number,
+  currentUserRanges: ParsedAppointmentRange[],
+  allOtherUsersRanges: ParsedAppointmentRange[][]
 ): TimelineSegmentCategory {
-  // Check if either user is sleeping in this time range (check first, highest priority)
-  const currentUserSleeping = currentUserAppointments.some(
-    (apt) =>
-      apt.category === "sleep" &&
-      dayjs(apt.startTime, HOUR_FORMAT).isBefore(dayjs(endTime, HOUR_FORMAT)) &&
-      dayjs(apt.endTime, HOUR_FORMAT).isAfter(dayjs(startTime, HOUR_FORMAT))
-  );
-  const otherUserSleeping = otherUserAppointments.some(
-    (apt) =>
-      apt.category === "sleep" &&
-      dayjs(apt.startTime, HOUR_FORMAT).isBefore(dayjs(endTime, HOUR_FORMAT)) &&
-      dayjs(apt.endTime, HOUR_FORMAT).isAfter(dayjs(startTime, HOUR_FORMAT))
+  // Check if current user is sleeping in this time range
+  const currentUserSleeping = currentUserRanges.some(
+    (range) =>
+      range.category === "sleep" &&
+      range.startMinutes < endMinutes &&
+      range.endMinutes > startMinutes
   );
 
-  // If either user is sleeping, show as sleep
-  if (currentUserSleeping || otherUserSleeping) {
+  // Check if any other user is sleeping (early exit on first match)
+  if (!currentUserSleeping) {
+    for (const userRanges of allOtherUsersRanges) {
+      if (userRanges.some(
+        (range) =>
+          range.category === "sleep" &&
+          range.startMinutes < endMinutes &&
+          range.endMinutes > startMinutes
+      )) {
+        return "sleep";
+      }
+    }
+  } else {
     return "sleep";
   }
 
-  // Check if users are busy (excluding sleep, which we already handled)
+  // Check if current user is busy (excluding sleep, which we already handled)
   const currentUserBusy = isTimeRangeOccupied(
-    startTime,
-    endTime,
-    currentUserAppointments
-  );
-  const otherUserBusy = isTimeRangeOccupied(
-    startTime,
-    endTime,
-    otherUserAppointments
+    startMinutes,
+    endMinutes,
+    currentUserRanges
   );
 
-  // If current user is busy, show as other (busy)
+  // If current user is busy, show as other (busy) - early exit
   if (currentUserBusy) {
     return "other";
   }
 
-  // If both users are free, show as match
-  if (!currentUserBusy && !otherUserBusy) {
-    return "match";
+  // Check if all other users are free (early exit on first busy user)
+  for (const userRanges of allOtherUsersRanges) {
+    if (isTimeRangeOccupied(startMinutes, endMinutes, userRanges)) {
+      // At least one other user is busy, current user is free
+      return "available";
+    }
   }
 
-  // If only current user is free (other is busy), show as available
-  return "available";
+  // All users are free
+  return "match";
 }
 
 /**
- * Builds timeline segments comparing appointments from both users.
- * Shows "match" when both users are free, "available" when only current user is free,
- * "sleep" when either user is sleeping, and "other" when current user is busy.
+ * Builds timeline segments comparing appointments from current user and all other users.
+ * Shows "match" when all users are free, "available" when only current user is free,
+ * "sleep" when any user is sleeping, and "other" when current user is busy.
+ * Optimized version that pre-parses appointments and uses minute-based comparisons.
+ * @param currentUserAppointments - Appointments of the current user
+ * @param allOtherUsersAppointments - Array of appointments arrays for all other users (each inner array represents one user's appointments)
+ * @returns Array of timeline segments
  */
 export function buildSharedTimelineSegments(
   currentUserAppointments: Appointment[],
-  otherUserAppointments: Appointment[]
+  allOtherUsersAppointments: Appointment[][] | Appointment[]
 ): TimelineSegment[] {
-  // Collect all time points from both users' appointments
-  const timePoints = new Set<string>([DAY_START, DAY_END]);
+  // Handle backward compatibility: if second parameter is a single array, convert to array of arrays
+  const otherUsersAppointmentsArray: Appointment[][] = 
+    allOtherUsersAppointments.length > 0 && Array.isArray(allOtherUsersAppointments[0])
+      ? (allOtherUsersAppointments as Appointment[][])
+      : [allOtherUsersAppointments as Appointment[]];
+
+  // Pre-parse all appointments to minute-based ranges (one-time cost)
+  const currentUserRanges = parseAppointmentsToRanges(currentUserAppointments);
+  const allOtherUsersRanges = otherUsersAppointmentsArray.map(parseAppointmentsToRanges);
+
+  // Collect all time points from all users' appointments
+  const timePointsSet = new Set<string>([DAY_START, DAY_END]);
   currentUserAppointments.forEach((appointment) => {
-    timePoints.add(appointment.startTime);
-    timePoints.add(appointment.endTime);
+    timePointsSet.add(appointment.startTime);
+    timePointsSet.add(appointment.endTime);
   });
-  otherUserAppointments.forEach((appointment) => {
-    timePoints.add(appointment.startTime);
-    timePoints.add(appointment.endTime);
+  otherUsersAppointmentsArray.forEach((userAppointments) => {
+    userAppointments.forEach((appointment) => {
+      timePointsSet.add(appointment.startTime);
+      timePointsSet.add(appointment.endTime);
+    });
   });
 
-  // Sort time points, handling "23:59" specially (it should always be last)
-  const sortedTimePoints = Array.from(timePoints)
-    .map((time) => {
-      // Keep "23:59" as is, don't convert with dayjs
-      if (time === DAY_END) {
-        return { time, sortValue: 23 * 60 + 59 }; // 23:59 = 1439 minutes
-      }
-      const dayjsTime = dayjs(time, HOUR_FORMAT);
-      return {
-        time,
-        sortValue: dayjsTime.diff(dayStart, "minute"),
-      };
-    })
-    .sort((a, b) => a.sortValue - b.sortValue)
-    .map((item) => item.time);
+  // Convert time points to minutes and sort (more efficient than parsing multiple times)
+  const timePointsWithMinutes = Array.from(timePointsSet).map((time) => ({
+    time,
+    minutes: timeToMinutes(time),
+  }));
+
+  // Sort by minutes (handles "23:59" correctly since it's 1439 minutes)
+  timePointsWithMinutes.sort((a, b) => a.minutes - b.minutes);
 
   const segments: TimelineSegment[] = [];
 
-  // Create segments between time points
-  for (let i = 0; i < sortedTimePoints.length - 1; i++) {
-    const segmentStart = sortedTimePoints[i];
-    const segmentEnd = sortedTimePoints[i + 1];
+  // Create segments between time points using pre-parsed ranges
+  for (let i = 0; i < timePointsWithMinutes.length - 1; i++) {
+    const segmentStart = timePointsWithMinutes[i];
+    const segmentEnd = timePointsWithMinutes[i + 1];
 
     const category = getSegmentCategory(
-      segmentStart,
-      segmentEnd,
-      currentUserAppointments,
-      otherUserAppointments
+      segmentStart.minutes,
+      segmentEnd.minutes,
+      currentUserRanges,
+      allOtherUsersRanges
     );
 
-    const left = timeToPercent(segmentStart);
-    const right = timeToPercent(segmentEnd);
+    const left = timeToPercent(segmentStart.time);
+    const right = timeToPercent(segmentEnd.time);
     const width = right - left;
     
     // Only add segment if width is positive (should always be true, but safety check)
     if (width > 0) {
       segments.push({
-        id: `${category}-${segmentStart}-${segmentEnd}`,
+        id: `${category}-${segmentStart.time}-${segmentEnd.time}`,
         left,
         width,
         category,
-        startTime: segmentStart,
-        endTime: segmentEnd,
+        startTime: segmentStart.time,
+        endTime: segmentEnd.time,
       });
     }
   }

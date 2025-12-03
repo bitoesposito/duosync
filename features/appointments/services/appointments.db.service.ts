@@ -458,12 +458,15 @@ export async function deleteAppointmentFromDb(
  * Updates an appointment in the database.
  * Handles both one-time appointments and recurring appointments.
  * 
- * For recurring appointments:
- * - Updates the recurring appointment template
- * - Note: This updates all instances of the recurring appointment
+ * This function correctly handles all update scenarios:
+ * - Updating a one-time appointment (stays one-time)
+ * - Updating a recurring appointment (stays recurring)
+ * - Converting a one-time appointment to recurring (moves from appointments to recurringAppointments)
+ * - Converting a recurring appointment to one-time (moves from recurringAppointments to appointments)
  * 
- * For one-time appointments:
- * - Updates the appointment directly in the appointments table.
+ * When converting recurring to one-time:
+ * - If the appointmentId has a date suffix (format "originalId-YYYY-MM-DD"), uses that date
+ * - Otherwise, uses today's date
  * 
  * Used exclusively by API routes (server-side only).
  */
@@ -477,11 +480,12 @@ export async function updateAppointmentInDb(
   const { eq, and } = await import("drizzle-orm");
 
   try {
-    // Check if it's a recurring appointment
-    // Case 1: Format "originalId-YYYY-MM-DD" (recurring instance active today)
+    // Step 1: Determine where the original appointment is stored
+    // Check if appointmentId has date suffix (format "originalId-YYYY-MM-DD")
     const parts = appointmentId.split("-");
     const hasDateSuffix = parts.length >= 4;
-    let recurringId: string | null = null;
+    let originalRecurringId: string | null = null;
+    let extractedDate: string | null = null;
 
     if (hasDateSuffix) {
       // Try to parse the last 3 parts as a date (YYYY-MM-DD)
@@ -489,16 +493,31 @@ export async function updateAppointmentInDb(
       const dateMatch = potentialDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
       
       if (dateMatch) {
-        // This is a recurring appointment instance
-        // Extract the template ID
-        recurringId = parts.slice(0, -3).join("-");
+        // This is a recurring appointment instance with date suffix
+        originalRecurringId = parts.slice(0, -3).join("-");
+        extractedDate = potentialDate;
       }
     }
-    
-    // Case 2: Check if it's a recurring template (ID without date suffix)
-    // If the appointment has isRepeating flag, or if the ID exists in recurringAppointments table
-    if (!recurringId && updatedAppointment.isRepeating) {
-      // Check if this ID exists in recurringAppointments table
+
+    // Check if original appointment exists in recurringAppointments table
+    let originalIsRecurring = false;
+    if (originalRecurringId) {
+      const existingRecurring = await db
+        .select()
+        .from(schema.recurringAppointments)
+        .where(
+          and(
+            eq(schema.recurringAppointments.id, originalRecurringId),
+            eq(schema.recurringAppointments.userId, userId)
+          )
+        )
+        .limit(1);
+      
+      if (existingRecurring.length > 0) {
+        originalIsRecurring = true;
+      }
+    } else {
+      // Check if appointmentId exists in recurringAppointments (template without date suffix)
       const existingRecurring = await db
         .select()
         .from(schema.recurringAppointments)
@@ -511,16 +530,43 @@ export async function updateAppointmentInDb(
         .limit(1);
       
       if (existingRecurring.length > 0) {
-        recurringId = appointmentId;
+        originalIsRecurring = true;
+        originalRecurringId = appointmentId;
       }
     }
 
-    // If it's a recurring appointment, update the template
-    if (recurringId) {
-      // Ensure repeatDays are sorted before saving
-      const sortedRepeatDays = updatedAppointment.repeatDays.length > 0 
-        ? sortRepeatDays(updatedAppointment.repeatDays) 
-        : [];
+    // Check if original appointment exists in appointments table
+    let originalIsOneTime = false;
+    if (!originalIsRecurring) {
+      const existingOneTime = await db
+        .select()
+        .from(schema.appointments)
+        .where(
+          and(
+            eq(schema.appointments.id, appointmentId),
+            eq(schema.appointments.userId, userId)
+          )
+        )
+        .limit(1);
+      
+      if (existingOneTime.length > 0) {
+        originalIsOneTime = true;
+        // Extract date from one-time appointment if we need it later
+        if (!extractedDate) {
+          extractedDate = existingOneTime[0].date;
+        }
+      }
+    }
+
+    // Step 2: Determine where the updated appointment should be stored
+    const shouldBeRecurring = updatedAppointment.isRepeating && updatedAppointment.repeatDays.length > 0;
+    const shouldBeOneTime = !shouldBeRecurring;
+
+    // Step 3: Handle the update based on source and destination
+    if (originalIsRecurring && shouldBeRecurring) {
+      // Case 1: Recurring → Recurring (simple update)
+      const templateId = originalRecurringId!;
+      const sortedRepeatDays = sortRepeatDays(updatedAppointment.repeatDays);
       
       await db
         .update(schema.recurringAppointments)
@@ -534,29 +580,103 @@ export async function updateAppointmentInDb(
         })
         .where(
           and(
-            eq(schema.recurringAppointments.id, recurringId),
+            eq(schema.recurringAppointments.id, templateId),
             eq(schema.recurringAppointments.userId, userId)
           )
         );
-      return;
-    }
-
-    // One-time appointment - update directly
-    await db
-      .update(schema.appointments)
-      .set({
+    } else if (originalIsOneTime && shouldBeOneTime) {
+      // Case 2: One-time → One-time (simple update)
+      await db
+        .update(schema.appointments)
+        .set({
+          startTime: updatedAppointment.startTime,
+          endTime: updatedAppointment.endTime,
+          category: updatedAppointment.category,
+          description: updatedAppointment.description,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(schema.appointments.id, appointmentId),
+            eq(schema.appointments.userId, userId)
+          )
+        );
+    } else if (originalIsRecurring && shouldBeOneTime) {
+      // Case 3: Recurring → One-time (delete from recurringAppointments, insert into appointments)
+      const templateId = originalRecurringId!;
+      
+      // Use extracted date if available, otherwise use today
+      const targetDate = extractedDate || new Date().toISOString().split("T")[0];
+      
+      // Delete from recurringAppointments
+      await db
+        .delete(schema.recurringAppointments)
+        .where(
+          and(
+            eq(schema.recurringAppointments.id, templateId),
+            eq(schema.recurringAppointments.userId, userId)
+          )
+        );
+      
+      // Insert into appointments with the original appointmentId (or templateId if no date suffix)
+      // Use the original appointmentId if it was a one-time ID, otherwise use templateId
+      const oneTimeId = originalRecurringId === appointmentId ? appointmentId : templateId;
+      
+      await db.insert(schema.appointments).values({
+        id: oneTimeId,
+        userId,
+        date: targetDate,
         startTime: updatedAppointment.startTime,
         endTime: updatedAppointment.endTime,
         category: updatedAppointment.category,
         description: updatedAppointment.description,
         updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(schema.appointments.id, appointmentId),
-          eq(schema.appointments.userId, userId)
+      });
+    } else if (originalIsOneTime && shouldBeRecurring) {
+      // Case 4: One-time → Recurring (delete from appointments, insert into recurringAppointments)
+      // Get the date from the original one-time appointment
+      const originalOneTime = await db
+        .select()
+        .from(schema.appointments)
+        .where(
+          and(
+            eq(schema.appointments.id, appointmentId),
+            eq(schema.appointments.userId, userId)
+          )
         )
-      );
+        .limit(1);
+      
+      if (originalOneTime.length === 0) {
+        throw new Error(`One-time appointment ${appointmentId} not found`);
+      }
+
+      const sortedRepeatDays = sortRepeatDays(updatedAppointment.repeatDays);
+      
+      // Delete from appointments
+      await db
+        .delete(schema.appointments)
+        .where(
+          and(
+            eq(schema.appointments.id, appointmentId),
+            eq(schema.appointments.userId, userId)
+          )
+        );
+      
+      // Insert into recurringAppointments
+      await db.insert(schema.recurringAppointments).values({
+        id: appointmentId,
+        userId,
+        startTime: updatedAppointment.startTime,
+        endTime: updatedAppointment.endTime,
+        category: updatedAppointment.category,
+        description: updatedAppointment.description,
+        repeatDays: sortedRepeatDays,
+        updatedAt: new Date(),
+      });
+    } else {
+      // Case 5: Appointment not found in either table
+      throw new Error(`Appointment ${appointmentId} not found for user ${userId}`);
+    }
   } catch (error) {
     console.error("Error updating appointment in database:", error);
     throw error;

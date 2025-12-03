@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useUsers } from "@/features/users";
 import { useI18n } from "@/i18n";
-import SettingsMenu from "./settings-menu";
+import LanguageSelector from "./language-selector";
 import HeaderUserSkeleton from "./header-user-skeleton";
 import Logo from "./logo";
 import Link from "next/link";
@@ -116,8 +116,8 @@ export default function Header() {
             </>
           )}
 
-          {/* Settings Menu */}
-          <SettingsMenu />
+          {/* Language Selector */}
+          <LanguageSelector />
         </div>
     </header>
   );

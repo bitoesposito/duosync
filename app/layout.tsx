@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { I18nProvider } from "@/i18n";
 import ServiceWorkerRegistrar from "@/components/layout/service-worker-registrar";
 import PWAOnboarding from "@/components/layout/pwa-onboarding";
+import { PWAPromptProvider } from "@/features/pwa/pwa-prompt-context";
 import {
   detectServerLocale,
   getMetadataTranslations,
@@ -148,12 +149,15 @@ export default async function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          storageKey={null}
         >
           <I18nProvider>
-            <ServiceWorkerRegistrar />
-            <PWAOnboarding />
-            {children}
-            <Toaster />
+            <PWAPromptProvider>
+              <ServiceWorkerRegistrar />
+              <PWAOnboarding />
+              {children}
+              <Toaster />
+            </PWAPromptProvider>
           </I18nProvider>
         </ThemeProvider>
       </body>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -15,6 +15,7 @@ import { useI18n } from "@/i18n";
 import { useNotifications } from "@/hooks";
 import { parseTimeStrict } from "@/lib/time/dayjs";
 import { Appointment } from "@/types";
+import { usePWAPrompt } from "@/features/pwa/pwa-prompt-context";
 
 /**
  * Sorts appointments by start time (ascending).
@@ -36,16 +37,19 @@ export default function AppointmentsList() {
   const { t } = useI18n();
   const { isSupported, permission, requestPermission, notify, isReady } =
     useNotifications();
+  const { showNotificationPrompt } = usePWAPrompt();
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [showInactiveRecurring, setShowInactiveRecurring] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  const pendingConfirmRef = useRef(false);
   const hasAppointments = appointments.length > 0;
   const confirmDisabled = !hasAppointments || isLoading || isSaving || isConfirming || !activeUser?.id;
 
   /**
-   * Handles the confirm button click: sends push notifications to other users.
+   * Internal function that actually sends the confirmation.
+   * Separated from handleConfirm to allow retry after permission grant.
    */
-  const handleConfirm = async () => {
+  const handleConfirmInternal = useCallback(async () => {
     if (!activeUser?.id) {
       console.warn("No active user selected");
       return;
@@ -88,6 +92,41 @@ export default function AppointmentsList() {
     } finally {
       setIsConfirming(false);
     }
+  }, [activeUser?.id, isSupported, permission, isReady, notify, t]);
+
+  // Auto-retry confirmation when notification permission is granted
+  useEffect(() => {
+    if (pendingConfirmRef.current && permission === "granted" && isReady && activeUser?.id) {
+      pendingConfirmRef.current = false;
+      // Small delay to ensure permission state is fully updated
+      setTimeout(() => {
+        handleConfirmInternal();
+      }, 100);
+    }
+  }, [permission, isReady, activeUser?.id, handleConfirmInternal]);
+
+  /**
+   * Handles the confirm button click: sends push notifications to other users.
+   * Shows notification permission prompt if permissions are not granted.
+   */
+  const handleConfirm = () => {
+    if (!activeUser?.id) {
+      console.warn("No active user selected");
+      return;
+    }
+
+    // Check if notifications are supported and permission is not granted
+    if (isSupported && permission !== "granted") {
+      // Show notification prompt if permission is default (not yet asked)
+      if (permission === "default") {
+        pendingConfirmRef.current = true;
+        showNotificationPrompt();
+        return; // Don't proceed until user grants permission
+      }
+      // If permission was denied, proceed anyway (user can still send notifications to others)
+    }
+
+    handleConfirmInternal();
   };
 
   // Separate and sort appointments by category

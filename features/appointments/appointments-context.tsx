@@ -27,6 +27,7 @@ import {
 } from "./services/appointments.service";
 import { useUsers } from "@/features/users";
 import { useI18n } from "@/i18n";
+import { usePWAPrompt } from "@/features/pwa/pwa-prompt-context";
 
 const AppointmentsContext = createContext<AppointmentsContextValue | undefined>(
   undefined
@@ -40,9 +41,11 @@ const AppointmentsContext = createContext<AppointmentsContextValue | undefined>(
 export function AppointmentsProvider({ children }: { children: ReactNode }) {
   const { activeUser, users } = useUsers();
   const { t } = useI18n();
+  const { showInstallPrompt } = usePWAPrompt();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [recurringTemplates, setRecurringTemplates] = useState<Appointment[]>([]);
   const [otherUserAppointments, setOtherUserAppointments] = useState<Appointment[] | undefined>(undefined);
+  const [allOtherUsersAppointments, setAllOtherUsersAppointments] = useState<Record<number, Appointment[]> | undefined>(undefined);
   const [loadedUserId, setLoadedUserId] = useState<number | null>(null);
   const [pendingMutations, setPendingMutations] = useState(0);
   const isSaving = pendingMutations > 0;
@@ -57,6 +60,7 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
       setAppointments([]);
       setRecurringTemplates([]);
       setOtherUserAppointments(undefined);
+      setAllOtherUsersAppointments(undefined);
       setLoadedUserId(null);
       return;
     }
@@ -64,32 +68,46 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
     setIsFetching(true);
 
     // Reset state when user changes to avoid showing stale data
-    const otherUser = users.find((u) => u.id !== activeUser.id);
+    const otherUsers = users.filter((u) => u.id !== activeUser.id);
     
     // Reset appointments and templates immediately
     setAppointments([]);
     setRecurringTemplates([]);
     
-    // Only reset otherUserAppointments if there's no other user
-    // If there's another user, keep the old value until new data arrives
+    // Only reset otherUserAppointments/allOtherUsersAppointments if there are no other users
+    // If there are other users, keep the old value until new data arrives
     // This prevents the hook from doing an unnecessary individual fetch
-    if (!otherUser?.id) {
+    if (otherUsers.length === 0) {
       setOtherUserAppointments(undefined);
+      setAllOtherUsersAppointments(undefined);
     }
     
     // Load active appointments for today and all recurring templates in parallel
-    // Fetch active appointments (for today)
-    const activeAppointmentsPromise = otherUser?.id
-      ? fetchAppointmentsBatch([activeUser.id, otherUser.id]).then((data) => {
+    // Fetch active appointments (for today) - include all users
+    const allUserIds = [activeUser.id, ...otherUsers.map((u) => u.id)];
+    const activeAppointmentsPromise = allUserIds.length > 1
+      ? fetchAppointmentsBatch(allUserIds).then((data) => {
           if (!cancelled) {
             setAppointments(data[activeUser.id] || []);
-            setOtherUserAppointments(data[otherUser.id] || []);
+            // Store all other users' appointments in the new structure
+            const otherUsersData: Record<number, Appointment[]> = {};
+            otherUsers.forEach((user) => {
+              otherUsersData[user.id] = data[user.id] || [];
+            });
+            setAllOtherUsersAppointments(otherUsersData);
+            // Keep backward compatibility: set otherUserAppointments for the first other user
+            if (otherUsers.length > 0) {
+              setOtherUserAppointments(data[otherUsers[0].id] || []);
+            } else {
+              setOtherUserAppointments(undefined);
+            }
           }
         })
       : fetchAppointments(activeUser.id).then((data) => {
           if (!cancelled) {
             setAppointments(data);
             setOtherUserAppointments(undefined);
+            setAllOtherUsersAppointments(undefined);
           }
         });
 
@@ -108,6 +126,7 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
           setAppointments([]);
           setRecurringTemplates([]);
           setOtherUserAppointments(undefined);
+          setAllOtherUsersAppointments(undefined);
           toast.error(t("toasts.loadError.title"), {
             description: t("toasts.loadError.description"),
           });
@@ -137,7 +156,10 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
         | ReturnType<typeof validateAppointmentSlot>
         | undefined;
       let appointment: Appointment | undefined;
+      let wasFirstAppointment = false;
       setAppointments((prev) => {
+        // Check if this is the first appointment
+        wasFirstAppointment = prev.length === 0;
         const validation = validateAppointmentSlot(data, prev);
         if (!validation.ok) {
           validationError = validation;
@@ -174,6 +196,13 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
               end: appointmentToSave.endTime,
             }),
           });
+          // Show install prompt after first appointment is created
+          if (wasFirstAppointment) {
+            // Small delay to let the success toast appear first
+            setTimeout(() => {
+              showInstallPrompt();
+            }, 500);
+          }
           // If it's a recurring appointment, reload recurring templates
           if (appointmentToSave.isRepeating) {
             return fetchRecurringTemplates(activeUser.id).then((templates) => {
@@ -194,7 +223,7 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
           setPendingMutations((count) => Math.max(0, count - 1));
         });
     },
-    [activeUser, t]
+    [activeUser, t, showInstallPrompt]
   );
 
   const updateAppointment = useCallback(
@@ -315,6 +344,7 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
       appointments,
       recurringTemplates,
       otherUserAppointments,
+      allOtherUsersAppointments,
       addAppointment,
       updateAppointment,
       removeAppointment,
@@ -322,7 +352,7 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
       isSaving,
       isFetching,
     }),
-    [appointments, recurringTemplates, otherUserAppointments, addAppointment, updateAppointment, removeAppointment, isLoading, isSaving, isFetching]
+    [appointments, recurringTemplates, otherUserAppointments, allOtherUsersAppointments, addAppointment, updateAppointment, removeAppointment, isLoading, isSaving, isFetching]
   );
 
   return (

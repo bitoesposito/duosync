@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TimelineSegment, TimelineSegmentCategory } from "@/types";
 
@@ -28,51 +27,31 @@ export function TimelineBar({
   icon,
   emptyMessage,
 }: TimelineBarProps) {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   const renderSegment = (segment: TimelineSegment) => {
-    if (isMounted) {
-      return (
-        <Popover key={segment.id}>
-          <PopoverTrigger asChild>
-            <div
-              className={`absolute h-full ${colorMap[segment.category]} transition-all hover:opacity-80 hover:scale-y-105 active:opacity-70 cursor-pointer`}
-              style={{
-                left: `${segment.left}%`,
-                width: `${segment.width}%`,
-                minWidth: "2px",
-              }}
-            />
-          </PopoverTrigger>
-          <PopoverContent className="rounded-none border-border w-auto p-3">
-            <div className="space-y-1">
-              {showIcon && icon && <div className="flex items-center gap-1.5">{icon}</div>}
-              <p className="font-semibold text-sm">
-                {segment.startTime} - {segment.endTime}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {getCategoryLabel(segment.category)}
-              </p>
-            </div>
-          </PopoverContent>
-        </Popover>
-      );
-    }
-
     return (
-      <div
-        key={segment.id}
-        className={`absolute h-full ${colorMap[segment.category]}`}
-        style={{
-          left: `${segment.left}%`,
-          width: `${segment.width}%`,
-          minWidth: "2px",
-        }}
-      />
+      <Popover key={segment.id}>
+        <PopoverTrigger asChild>
+          <div
+            className={`absolute h-full ${colorMap[segment.category]} transition-all hover:opacity-80 hover:scale-y-105 active:opacity-70 cursor-pointer`}
+            style={{
+              left: `${segment.left}%`,
+              width: `${segment.width}%`,
+              minWidth: "2px",
+            }}
+          />
+        </PopoverTrigger>
+        <PopoverContent className="rounded-none border-border w-auto p-3">
+          <div className="space-y-1">
+            {showIcon && icon && <div className="flex items-center gap-1.5">{icon}</div>}
+            <p className="font-semibold text-sm">
+              {segment.startTime} - {segment.endTime}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {getCategoryLabel(segment.category)}
+            </p>
+          </div>
+        </PopoverContent>
+      </Popover>
     );
   };
 
