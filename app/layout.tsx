@@ -124,25 +124,6 @@ export default async function RootLayout({
         className={ibmPlexSans.variable}
         suppressHydrationWarning
       >
-        {/* 
-          Banner to notify users that the app is under construction.
-          Only presentational logic: can be refactored later into a reusable component in components/layout if needed.
-        */}
-        <div
-          className="bg-yellow-500 text-black border-b border-yellow-600 p-2 text-center font-medium text-sm leading-none tracking-tight z-50 relative"
-          aria-live="polite"
-          role="status"
-        >
-          <span>
-            App in sviluppo, per informazioni{" "}
-            <Link
-              href="https://blog.vitoesposito.it"
-              className="text-blue-600 hover:underline hover:text-blue-700"
-            >
-              visita il blog
-            </Link>
-          </span>
-        </div>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
