@@ -9,7 +9,7 @@ import { Appointment } from "@/types";
  * Converts time to minutes since midnight for comparison.
  * Handles 23:59 as 1439 minutes (end of day).
  */
-function timeToMinutes(time: string): number {
+export function timeToMinutes(time: string): number {
   if (time === "23:59" || time === "24:00") {
     return 23 * 60 + 59; // 1439 minutes (end of day)
   }

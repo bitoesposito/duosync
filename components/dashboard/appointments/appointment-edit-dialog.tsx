@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Loader2Icon } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { toast } from "sonner";
-import { buildAppointmentFormData, validateAppointmentSlot, sortRepeatDays } from "@/features/appointments";
+import { buildAppointmentFormData, validateAppointmentSlot, validateRecurringAppointmentSlot, sortRepeatDays, fetchAppointmentsForValidation } from "@/features/appointments";
+import { useUsers } from "@/features/users";
 import { CategorySelector } from "@/components/dashboard/appointments/form-category-selector";
 import { TimeInputs } from "@/components/dashboard/appointments/form-time-inputs";
 import { RecurrenceSection } from "@/components/dashboard/appointments/form-recurrence";
@@ -41,6 +42,7 @@ export default function AppointmentEditDialog({
   existingAppointments,
 }: AppointmentEditDialogProps) {
   const { t } = useI18n();
+  const { activeUser } = useUsers();
   
   // Form state
   const [selectedCategory, setSelectedCategory] = useState<AppointmentCategory>("other");
@@ -51,6 +53,22 @@ export default function AppointmentEditDialog({
   const [repeatDays, setRepeatDays] = useState<DayId[]>([]);
   const [areTimeInputsValid, setAreTimeInputsValid] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Extract template ID from appointment ID (for recurring appointments, ID might have date suffix)
+  const templateId = appointment?.isRepeating && appointment.id.includes("-")
+    ? (() => {
+        // Check if ID has date suffix (format: "templateId-YYYY-MM-DD")
+        const parts = appointment.id.split("-");
+        if (parts.length >= 4) {
+          const potentialDate = parts.slice(-3).join("-");
+          if (potentialDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            // Extract template ID (everything before the date)
+            return parts.slice(0, -3).join("-");
+          }
+        }
+        return appointment.id;
+      })()
+    : appointment?.id;
 
   // Initialize form when appointment changes
   useEffect(() => {
@@ -79,7 +97,7 @@ export default function AppointmentEditDialog({
    * Handles saving the updated appointment.
    */
   const handleSave = useCallback(async () => {
-    if (!appointment) return;
+    if (!appointment || !activeUser) return;
 
     const formData: AppointmentFormData = buildAppointmentFormData({
       startTime,
@@ -90,9 +108,40 @@ export default function AppointmentEditDialog({
       repeatDays,
     });
 
-    // Validate appointment slot (exclude current appointment from overlap check)
-    const otherAppointments = existingAppointments.filter((apt) => apt.id !== appointment.id);
-    const validation = validateAppointmentSlot(formData, otherAppointments);
+    // Validate appointment slot based on type
+    let validation;
+    if (formData.isRepeating && formData.repeatDays.length > 0) {
+      // For recurring appointments, fetch validation data from server
+      try {
+        const { recurringAppointments, oneTimeAppointments } =
+          await fetchAppointmentsForValidation(activeUser.id, formData.repeatDays);
+        
+        // Exclude current appointment from validation
+        const filteredRecurring = recurringAppointments.filter(
+          (apt) => apt.id !== appointment.id
+        );
+        const filteredOneTime = oneTimeAppointments.filter(
+          (apt) => apt.id !== appointment.id
+        );
+        
+        validation = validateRecurringAppointmentSlot(
+          formData,
+          filteredRecurring,
+          filteredOneTime
+        );
+      } catch (error) {
+        console.error("Failed to validate recurring appointment:", error);
+        toast.error(t("toasts.saveError.title"), {
+          description: t("toasts.saveError.description"),
+        });
+        return;
+      }
+    } else {
+      // For one-time appointments, use existing validation
+      const otherAppointments = existingAppointments.filter((apt) => apt.id !== appointment.id);
+      validation = validateAppointmentSlot(formData, otherAppointments);
+    }
+
     if (!validation.ok) {
       const reasonKeyMap = {
         "invalid-format": "toasts.invalidSlot.descriptionInvalidFormat",
@@ -122,6 +171,7 @@ export default function AppointmentEditDialog({
     }
   }, [
     appointment,
+    activeUser,
     startTime,
     endTime,
     selectedCategory,
@@ -131,6 +181,7 @@ export default function AppointmentEditDialog({
     existingAppointments,
     onSave,
     onOpenChange,
+    t,
   ]);
 
   if (!appointment) return null;
@@ -160,8 +211,11 @@ export default function AppointmentEditDialog({
             onEndTimeChange={setEndTime}
             disabled={isSubmitting}
             t={t}
-            existingAppointments={existingAppointments.filter((apt) => apt.id !== appointment.id)}
+            existingAppointments={existingAppointments}
             onValidationChange={setAreTimeInputsValid}
+            isRepeating={isRepeating}
+            repeatDays={repeatDays}
+            excludeAppointmentId={templateId}
           />
 
           {selectedCategory === "other" && (

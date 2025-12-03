@@ -18,9 +18,11 @@ import {
 import {
   createAppointment,
   validateAppointmentSlot,
+  validateRecurringAppointmentSlot,
   fetchAppointments,
   fetchAppointmentsBatch,
   fetchRecurringTemplates,
+  fetchAppointmentsForValidation,
   saveAppointment,
   updateAppointment as updateAppointmentApi,
   removeAppointment as removeAppointmentApi,
@@ -28,6 +30,7 @@ import {
 import { useUsers } from "@/features/users";
 import { useI18n } from "@/i18n";
 import { usePWAPrompt } from "@/features/pwa/pwa-prompt-context";
+import { getDayOfWeek } from "@/lib/db/day-utils";
 
 const AppointmentsContext = createContext<AppointmentsContextValue | undefined>(
   undefined
@@ -145,29 +148,78 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
   }, [activeUser?.id, users, t]);
 
   const addAppointment = useCallback(
-    (data: AppointmentFormData) => {
+    async (data: AppointmentFormData) => {
       if (!activeUser) {
         toast.warning(t("toasts.selectUser.title"), {
           description: t("toasts.selectUser.description"),
         });
         return;
       }
+
       let validationError:
         | ReturnType<typeof validateAppointmentSlot>
+        | ReturnType<typeof validateRecurringAppointmentSlot>
         | undefined;
       let appointment: Appointment | undefined;
       let wasFirstAppointment = false;
-      setAppointments((prev) => {
-        // Check if this is the first appointment
-        wasFirstAppointment = prev.length === 0;
-        const validation = validateAppointmentSlot(data, prev);
-        if (!validation.ok) {
-          validationError = validation;
-          return prev;
+
+      // For recurring appointments, fetch validation data from server
+      if (data.isRepeating && data.repeatDays.length > 0) {
+        try {
+          const { recurringAppointments, oneTimeAppointments } =
+            await fetchAppointmentsForValidation(activeUser.id, data.repeatDays);
+          
+          const validation = validateRecurringAppointmentSlot(
+            data,
+            recurringAppointments,
+            oneTimeAppointments
+          );
+          
+          if (!validation.ok) {
+            validationError = validation;
+          } else {
+            // Validation passed, create appointment
+            appointment = createAppointment(data);
+            
+            // Only add to today's appointments if today is included in repeatDays
+            const today = new Date().toISOString().split("T")[0];
+            const todayDayOfWeek = getDayOfWeek(today);
+            const isActiveToday = data.repeatDays.includes(todayDayOfWeek);
+            
+            if (isActiveToday) {
+              setAppointments((prev) => {
+                wasFirstAppointment = prev.length === 0;
+                return [...prev, appointment!];
+              });
+            } else {
+              // If not active today, check if this would be the first appointment ever
+              // (we need to know this for the install prompt)
+              setAppointments((prev) => {
+                wasFirstAppointment = prev.length === 0;
+                return prev; // Don't add to today's list
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Failed to validate recurring appointment:", error);
+          toast.error(t("toasts.saveError.title"), {
+            description: t("toasts.saveError.description"),
+          });
+          return;
         }
-        appointment = createAppointment(data);
-        return [...prev, appointment];
-      });
+      } else {
+        // For one-time appointments, use existing validation
+        setAppointments((prev) => {
+          wasFirstAppointment = prev.length === 0;
+          const validation = validateAppointmentSlot(data, prev);
+          if (!validation.ok) {
+            validationError = validation;
+            return prev;
+          }
+          appointment = createAppointment(data);
+          return [...prev, appointment];
+        });
+      }
 
       if (validationError && !validationError.ok) {
         const reasonKeyMap = {

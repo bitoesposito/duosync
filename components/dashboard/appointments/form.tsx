@@ -177,6 +177,8 @@ export default function AppointmentsForm() {
             t={t}
             existingAppointments={appointments}
             onValidationChange={setAreTimeInputsValid}
+            isRepeating={isRepeating}
+            repeatDays={repeatDays}
           />
 
           {selectedCategory === "other" && (

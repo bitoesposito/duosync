@@ -6,7 +6,7 @@ import { ButtonGroup } from "@/components/ui/button-group";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { Appointment } from "@/types";
+import { Appointment, DayId } from "@/types";
 import {
   findFirstAvailableSlot,
   correctStartTimeIfInvalid,
@@ -38,6 +38,9 @@ type TimeInputsProps = {
   t: (key: string, values?: Record<string, string>) => string;
   existingAppointments?: Appointment[];
   onValidationChange?: (isValid: boolean) => void;
+  isRepeating?: boolean;
+  repeatDays?: string[];
+  excludeAppointmentId?: string; // ID of appointment to exclude from validation (for editing)
 };
 
 type InputMode = "duration" | "endTime";
@@ -58,6 +61,9 @@ export function TimeInputs({
   t,
   existingAppointments = [],
   onValidationChange,
+  isRepeating = false,
+  repeatDays = [],
+  excludeAppointmentId,
 }: TimeInputsProps) {
   const [mode, setMode] = useState<InputMode>("duration");
   const [hoursComboboxOpen, setHoursComboboxOpen] = useState(false);
@@ -78,6 +84,9 @@ export function TimeInputs({
     existingAppointments,
     disabled,
     onValidationChange,
+    isRepeating,
+    repeatDays: repeatDays as DayId[],
+    excludeAppointmentId,
   });
 
   // Duration state hook
