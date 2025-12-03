@@ -61,7 +61,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-start md:items-center justify-center bg-background p-4 pt-8 md:pt-4">
       <Card className="w-full max-w-xs">
         <CardHeader className="text-center">
           <CardTitle>{t("onboarding.setup.title")}</CardTitle>
