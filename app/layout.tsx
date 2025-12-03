@@ -149,7 +149,7 @@ export default async function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
-          storageKey={null}
+          storageKey={undefined}
         >
           <I18nProvider>
             <PWAPromptProvider>
