@@ -31,6 +31,7 @@ type UseTimeInputValidationProps = {
   onValidationChange?: (isValid: boolean) => void;
   isRepeating?: boolean;
   repeatDays?: DayId[];
+  excludeAppointmentId?: string; // ID of appointment to exclude from validation (for editing)
 };
 
 /**
