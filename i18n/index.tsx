@@ -32,6 +32,7 @@ export const SUPPORTED_LOCALES = Object.keys(messages) as Locale[];
 
 const DEFAULT_LOCALE: Locale = "it";
 const STORAGE_KEY = "duosync.locale";
+const COOKIE_KEY = "duosync.locale";
 
 const I18nContext = createContext<I18nContextValue | undefined>(undefined);
 
@@ -76,16 +77,59 @@ function applyTemplate(template: string, values?: TranslationValues): string {
 }
 
 /**
- * Detects the user's preferred locale from localStorage or browser settings.
- * Falls back to the default locale if no valid preference is found.
+ * Reads a cookie value by name.
+ * @param name - The cookie name
+ * @returns The cookie value or null if not found
+ */
+function getCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return parts.pop()?.split(";").shift() || null;
+  }
+  return null;
+}
+
+/**
+ * Sets a cookie value.
+ * @param name - The cookie name
+ * @param value - The cookie value
+ * @param days - Number of days until expiration (default: 365)
+ */
+function setCookie(name: string, value: string, days = 365): void {
+  if (typeof document === "undefined") return;
+  const date = new Date();
+  date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+  const expires = `expires=${date.toUTCString()}`;
+  document.cookie = `${name}=${value};${expires};path=/;SameSite=Lax`;
+}
+
+/**
+ * Detects the user's preferred locale from cookies, localStorage, or browser settings.
+ * On initial render, prioritizes initialLocale (from server) to prevent hydration mismatch.
+ * On subsequent renders, checks cookie -> localStorage -> browser language -> default.
+ * @param initialLocale - Optional initial locale from server-side detection (used on first render only)
  * @returns The detected locale
  */
-function detectLocale(): Locale {
+function detectLocale(initialLocale?: Locale): Locale {
   if (typeof window === "undefined") {
-    return DEFAULT_LOCALE;
+    return initialLocale || DEFAULT_LOCALE;
   }
 
-  // Check localStorage first
+  // On first render, prioritize initialLocale from server to match SSR
+  // This prevents hydration mismatch
+  if (initialLocale && SUPPORTED_LOCALES.includes(initialLocale)) {
+    return initialLocale;
+  }
+
+  // Check cookie (for SSR sync on subsequent renders)
+  const cookieLocale = getCookie(COOKIE_KEY) as Locale | null;
+  if (cookieLocale && SUPPORTED_LOCALES.includes(cookieLocale)) {
+    return cookieLocale;
+  }
+
+  // Check localStorage
   const stored = window.localStorage.getItem(STORAGE_KEY) as Locale | null;
   if (stored && SUPPORTED_LOCALES.includes(stored)) {
     return stored;
@@ -103,14 +147,25 @@ function detectLocale(): Locale {
 /**
  * Provider component that manages i18n state and translations.
  * Handles locale detection, persistence, and translation resolution.
+ * @param children - React children to render
+ * @param initialLocale - Optional initial locale from server-side detection (prevents hydration mismatch)
  */
-export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocale] = useState<Locale>(() => detectLocale());
+export function I18nProvider({
+  children,
+  initialLocale,
+}: {
+  children: ReactNode;
+  initialLocale?: Locale;
+}) {
+  // Use initialLocale on first render to match server-side rendering
+  // This prevents hydration mismatch by ensuring client initial state matches server
+  const [locale, setLocale] = useState<Locale>(() => detectLocale(initialLocale));
 
-  // Persist locale changes to localStorage and update HTML lang attribute
+  // Persist locale changes to both localStorage and cookies, and update HTML lang attribute
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(STORAGE_KEY, locale);
+    setCookie(COOKIE_KEY, locale);
     document.documentElement.lang = locale;
   }, [locale]);
 

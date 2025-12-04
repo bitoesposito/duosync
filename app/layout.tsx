@@ -131,7 +131,7 @@ export default async function RootLayout({
           disableTransitionOnChange
           storageKey={undefined}
         >
-          <I18nProvider>
+          <I18nProvider initialLocale={initialLocale}>
             <PWAPromptProvider>
               <ServiceWorkerRegistrar />
               <PWAOnboarding />
