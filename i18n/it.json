@@ -59,6 +59,7 @@
     "quickPresetsLabel": "Preset rapidi",
     "descriptionLabel": "Descrizione",
     "descriptionPlaceholder": "Impegno, sonno, lavoro...",
+    "categoryLabel": "Ricorrenza",
       "repeatLabel": "Ripeti",
       "quickSelect": {
         "allWeek": "Tutta la settimana",

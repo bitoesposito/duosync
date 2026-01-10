@@ -1,8 +1,9 @@
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { DayId } from "@/types";
+import { cn } from "@/lib/utils";
 
 type RecurrenceSectionProps = {
   isRepeating: boolean;
@@ -51,25 +52,32 @@ export function RecurrenceSection({
   };
 
   return (
-    <div className="flex flex-col gap-3 pt-1">
-      <div className="flex items-center justify-between">
-        <Label
-          htmlFor="repeat-appointment"
-          className="cursor-pointer text-muted-foreground text-xs font-medium uppercase"
-        >
+    <div className="flex flex-col gap-0 pt-1">
+      {/* Accordion header - clickable to expand/collapse */}
+      <button
+        type="button"
+        onClick={() => onRepeatingChange(!isRepeating)}
+        disabled={disabled}
+        className="flex items-center justify-between py-2 cursor-pointer hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <Label className="cursor-pointer text-muted-foreground text-xs font-medium uppercase pointer-events-none">
           {t("form.repeatLabel")}
         </Label>
-        <Switch
-          className="cursor-pointer rounded-full data-[state=checked]:bg-foreground scale-90 origin-right"
-          id="repeat-appointment"
-          checked={isRepeating}
-          onCheckedChange={onRepeatingChange}
-          disabled={disabled}
-        />
-      </div>
+        {isRepeating ? (
+          <ChevronUpIcon className="w-4 h-4 text-muted-foreground" />
+        ) : (
+          <ChevronDownIcon className="w-4 h-4 text-muted-foreground" />
+        )}
+      </button>
 
-      {isRepeating && (
-        <div className="flex flex-col gap-2">
+      {/* Accordion content - animated expand/collapse */}
+      <div
+        className={cn(
+          "overflow-hidden transition-all duration-200 ease-in-out",
+          isRepeating ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+        )}
+      >
+        <div className="flex flex-col gap-2 pt-1 pb-2">
           {/* Quick selection buttons */}
           <div className="flex gap-2">
             <Button
@@ -113,7 +121,7 @@ export function RecurrenceSection({
             ))}
           </ToggleGroup>
         </div>
-      )}
+      </div>
     </div>
   );
 }

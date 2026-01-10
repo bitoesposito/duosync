@@ -59,6 +59,7 @@
     "quickPresetsLabel": "Quick Presets",
     "descriptionLabel": "Description",
     "descriptionPlaceholder": "Meeting, sleep, work...",
+    "categoryLabel": "Recurrence",
       "repeatLabel": "Repeat",
       "quickSelect": {
         "allWeek": "All week",

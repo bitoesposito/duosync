@@ -65,7 +65,7 @@ export function TimeInputs({
   repeatDays = [],
   excludeAppointmentId,
 }: TimeInputsProps) {
-  const [mode, setMode] = useState<InputMode>("duration");
+  const [mode, setMode] = useState<InputMode>("endTime");
   const [hoursComboboxOpen, setHoursComboboxOpen] = useState(false);
   const [minutesComboboxOpen, setMinutesComboboxOpen] = useState(false);
 
@@ -316,19 +316,19 @@ export function TimeInputs({
           <ButtonGroup className="w-full overflow-x-auto border border-border rounded-none p-0.5">
             <Button
               className="flex-1 gap-2 cursor-pointer rounded-none border-none shadow-none h-9 text-sm cursor-pointer"
-              variant={mode === "duration" ? "secondary" : "ghost"}
-              onClick={() => setMode("duration")}
-              disabled={isModeToggleDisabled}
-            >
-              {t("form.modeDuration")}
-            </Button>
-            <Button
-              className="flex-1 gap-2 cursor-pointer rounded-none border-none shadow-none h-9 text-sm cursor-pointer"
               variant={mode === "endTime" ? "secondary" : "ghost"}
               onClick={() => setMode("endTime")}
               disabled={isModeToggleDisabled}
             >
               {t("form.endLabel")}
+            </Button>
+            <Button
+              className="flex-1 gap-2 cursor-pointer rounded-none border-none shadow-none h-9 text-sm cursor-pointer"
+              variant={mode === "duration" ? "secondary" : "ghost"}
+              onClick={() => setMode("duration")}
+              disabled={isModeToggleDisabled}
+            >
+              {t("form.modeDuration")}
             </Button>
           </ButtonGroup>
         </div>

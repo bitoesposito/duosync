@@ -161,13 +161,6 @@ export default function AppointmentsForm() {
 
       <div className={`${isOpen ? "block" : "hidden"} md:block`}>
         <div className="flex flex-col gap-4 pb-6 md:pb-0">
-          <CategorySelector
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-            disabled={!activeUser}
-            t={t}
-          />
-
           <TimeInputs
             startTime={startTime}
             endTime={endTime}
@@ -180,6 +173,18 @@ export default function AppointmentsForm() {
             isRepeating={isRepeating}
             repeatDays={repeatDays}
           />
+
+          <div className="flex flex-col gap-1">
+            <Label className="text-muted-foreground text-xs font-medium uppercase">
+              {t("form.categoryLabel")}
+            </Label>
+            <CategorySelector
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              disabled={!activeUser}
+              t={t}
+            />
+          </div>
 
           {selectedCategory === "other" && (
             <div className="flex flex-col gap-1">
