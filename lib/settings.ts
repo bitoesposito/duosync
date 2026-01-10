@@ -12,8 +12,14 @@ import { eq } from "drizzle-orm";
  * @returns The app settings object or undefined if not found
  */
 export async function getAppSettings() {
-  const settings = await db.select().from(schema.appSettings).where(eq(schema.appSettings.id, 1));
-  return settings[0];
+  try {
+    const settings = await db.select().from(schema.appSettings).where(eq(schema.appSettings.id, 1));
+    return settings[0];
+  } catch (error) {
+    // Database not initialized or table doesn't exist yet
+    console.warn("App settings not available:", error instanceof Error ? error.message : "Unknown error");
+    return undefined;
+  }
 }
 
 /**

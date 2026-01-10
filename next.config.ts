@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
         aggregateTimeout: 300, // Delay before rebuilding once the first file changed
       };
     }
+    
     return config;
   },
   // Add empty turbopack config to silence Next.js 16 warning when using webpack

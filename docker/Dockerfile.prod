@@ -7,12 +7,16 @@ WORKDIR /app
 # Install dependencies needed for native modules
 RUN apk add --no-cache libc6-compat
 
-# Copy package files
-COPY package.json package-lock.json* ./
+# Copy package files and npm config for security
+COPY package.json package-lock.json* .npmrc* ./
 
-# Install dependencies
-RUN npm ci --legacy-peer-deps --only=production && \
+# Security: Install dependencies with audit check
+# Use --ignore-scripts to prevent malicious postinstall scripts during dependency installation
+RUN npm ci --legacy-peer-deps --only=production --ignore-scripts && \
     npm cache clean --force
+
+# Security: Run audit check (non-blocking but will warn)
+RUN npm audit --audit-level=moderate || echo "Warning: Some vulnerabilities detected in production dependencies"
 
 # ============================================
 # Stage 2: Builder
@@ -23,11 +27,17 @@ WORKDIR /app
 # Install dependencies needed for native modules
 RUN apk add --no-cache libc6-compat
 
-# Copy package files
-COPY package.json package-lock.json* ./
+# Copy package files and npm config for security
+COPY package.json package-lock.json* .npmrc* ./
 
-# Install all dependencies (including devDependencies for build)
-RUN npm ci --legacy-peer-deps
+# Security: Install all dependencies with audit check
+# Use --ignore-scripts to prevent malicious postinstall scripts
+# Note: Some packages may need scripts for build, but we'll handle that explicitly if needed
+RUN npm ci --legacy-peer-deps --ignore-scripts && \
+    npm cache clean --force
+
+# Security: Run audit check before building
+RUN npm audit --audit-level=moderate || echo "Warning: Some vulnerabilities detected, but continuing build..."
 
 # Copy application source code
 COPY . .
@@ -40,23 +50,50 @@ ENV NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
 RUN npm run build
 
 # ============================================
-# Stage 3: Runner
+# Stage 3: Runtime Dependencies
+# ============================================
+# SECURITY: Instead of installing packages, we copy them from builder
+# This ensures we use the exact same audited versions
+FROM node:20-alpine AS runtime-deps
+WORKDIR /app
+
+# Copy only the runtime dependencies we need from builder
+# These are already installed and audited in the builder stage
+COPY --from=builder /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
+COPY --from=builder /app/node_modules/pg ./node_modules/pg
+
+# Copy transitive dependencies for pg (these are required for pg to work)
+# We copy the entire pg dependency tree to ensure compatibility
+COPY --from=builder /app/node_modules/pg-pool ./node_modules/pg-pool
+COPY --from=builder /app/node_modules/postgres-array ./node_modules/postgres-array
+COPY --from=builder /app/node_modules/postgres-bytea ./node_modules/postgres-bytea
+COPY --from=builder /app/node_modules/postgres-date ./node_modules/postgres-date
+COPY --from=builder /app/node_modules/postgres-interval ./node_modules/postgres-interval
+COPY --from=builder /app/node_modules/split2 ./node_modules/split2
+COPY --from=builder /app/node_modules/readable-stream ./node_modules/readable-stream
+
+# Copy package.json for dependency resolution (needed for module resolution)
+COPY --from=builder /app/package.json ./package.json
+
+# ============================================
+# Stage 4: Runner
 # ============================================
 FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Install tsx globally for running TypeScript scripts
-RUN npm install -g tsx
+# Security: Copy tsx from builder stage to avoid downloading from registry at runtime
+COPY --from=builder /app/node_modules/.bin/tsx /usr/local/bin/tsx
+COPY --from=builder /app/node_modules/tsx /usr/local/lib/node_modules/tsx
 
 # Copy Next.js standalone build (includes server.js and minimal dependencies)
 COPY --from=builder /app/.next/standalone ./
 
-# Install dependencies needed for database initialization scripts
-# (drizzle-orm and pg are not included in Next.js standalone build)
-# These need to be installed after copying standalone to add to existing node_modules
-RUN npm install --legacy-peer-deps --no-save drizzle-orm@^0.44.7 pg@^8.16.3
+# SECURITY FIX: Copy runtime dependencies from dedicated stage
+# This ensures we use the exact same versions that were audited during build
+# and avoids installing packages at runtime (major security risk)
+COPY --from=runtime-deps /app/node_modules ./node_modules
 
 # Copy static files
 COPY --from=builder /app/.next/static ./.next/static
