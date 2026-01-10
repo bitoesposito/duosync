@@ -16,7 +16,7 @@ services:
 
   app:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile
     container_name: duosync-app
     depends_on:
