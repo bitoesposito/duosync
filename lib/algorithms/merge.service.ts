@@ -41,7 +41,8 @@ export function mergeIntervals(intervals: Interval[]): MergedInterval[] {
 
 		const last = merged[merged.length - 1]
 
-		if (interval.startTs <= last.end) {
+		// Check for overlap: intervals overlap if start < end (not <=, as touching intervals don't overlap)
+		if (interval.startTs < last.end) {
 			// Overlap: merge with priority
 			last.end = new Date(Math.max(last.end.getTime(), interval.endTs.getTime()))
 			last.category = maxPriority(last.category, interval.category)

@@ -69,14 +69,18 @@ function resolveRecurrenceRule(
 		until: rule.until ? new Date(rule.until) : undefined,
 	}
 
-	// Map days of week (1-7 to 0-6 for RRule)
-	const daysOfWeek = rule.daysOfWeek.map((d) => d - 1)
+	// Map days of week (1-7 to 0-6 for RRule) if present
+	const daysOfWeek = rule.daysOfWeek ? rule.daysOfWeek.map((d) => d - 1) : []
 
 	if (rule.type === "weekly") {
-		rruleOptions.byweekday = daysOfWeek
+		if (daysOfWeek.length > 0) {
+			rruleOptions.byweekday = daysOfWeek
+		}
 	} else if (rule.type === "daily") {
 		// Daily with selected days: filter by weekday
-		rruleOptions.byweekday = daysOfWeek
+		if (daysOfWeek.length > 0) {
+			rruleOptions.byweekday = daysOfWeek
+		}
 		rruleOptions.freq = RRule.DAILY
 	} else if (rule.type === "monthly") {
 		// Monthly: combine dayOfMonth/byWeekday with daysOfWeek
