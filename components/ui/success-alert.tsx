@@ -34,7 +34,7 @@ export function SuccessAlert({ message, onDismiss, className = "" }: SuccessAler
 				<button
 					onClick={onDismiss}
 					className="flex-shrink-0 text-green-600/70 dark:text-green-400/70 hover:text-green-600 dark:hover:text-green-400"
-					aria-label="Dismiss message"
+					aria-label="Dismiss"
 				>
 					<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

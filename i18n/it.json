@@ -17,7 +17,8 @@
 		"filter": "Filtra",
 		"select": "Seleziona",
 		"all": "Tutti",
-		"none": "Nessuno"
+		"none": "Nessuno",
+		"tip": "Suggerimento"
 	},
 	"errors": {
 		"INTERVAL_INVALID": "L'intervallo specificato non è valido",
@@ -29,7 +30,17 @@
 		"VALIDATION_ERROR": "Errore di validazione",
 		"RATE_LIMIT_EXCEEDED": "Troppe richieste, riprova più tardi",
 		"NOT_FOUND": "Risorsa non trovata",
-		"INTERNAL_ERROR": "Errore interno del server"
+		"INTERNAL_ERROR": "Errore interno del server",
+		"UNEXPECTED_ERROR": "Si è verificato un errore imprevisto",
+		"AUTH_CANCELLED": "Autenticazione annullata o non consentita. Riprova.",
+		"PASSKEY_ALREADY_REGISTERED": "Questa passkey è già registrata. Usane una diversa.",
+		"PASSKEY_NOT_SUPPORTED": "Le passkey non sono supportate su questo dispositivo o browser. Usa il link magico invece.",
+		"SECURITY_ERROR": "Errore di sicurezza. Assicurati di usare HTTPS in produzione.",
+		"INVALID_REQUEST": "Richiesta non valida. Controlla i tuoi input.",
+		"AUTH_REQUIRED": "Autenticazione richiesta. Accedi di nuovo.",
+		"RESOURCE_ALREADY_EXISTS": "Questa risorsa esiste già.",
+		"TOO_MANY_REQUESTS": "Troppe richieste. Attendi un momento e riprova.",
+		"SERVER_ERROR": "Errore del server. Riprova più tardi."
 	},
 	"navigation": {
 		"home": "Home",
@@ -48,12 +59,96 @@
 			"submit": "Accedi",
 			"magicLink": "Invia link magico via email",
 			"email": "Email",
-			"emailPlaceholder": "tua@email.com"
+			"emailPlaceholder": "tua@email.com",
+			"emailDescription": "Ti invieremo un link magico per accedere.",
+			"emailTip": "Dopo l'accesso, considera di salvare una passkey per accessi futuri più veloci.",
+			"sending": "Invio in corso...",
+			"emailSent": "Email inviata!",
+			"sendMagicLink": "Invia link magico",
+			"checkingAuth": "Controllo autenticazione...",
+			"signingIn": "Accesso in corso...",
+			"dontHaveAccount": "Non hai un account?",
+			"createOne": "Creane uno",
+			"backToHome": "← Torna alla home",
+			"magicLinkSent": "Controlla la tua casella di posta! Ti abbiamo inviato un link magico per accedere. Il link scadrà tra 15 minuti.",
+			"magicLinkExpiredTip": "Suggerimento: I link magici scadono dopo 15 minuti. Richiedine uno nuovo se necessario.",
+			"accountNotFoundTip": "Suggerimento: Assicurati di usare l'indirizzo email corretto, oppure",
+			"createNewAccount": "crea un nuovo account"
+		},
+		"register": {
+			"title": "Crea nuovo account",
+			"description": "Crea il tuo account con una passkey per un accesso sicuro e veloce",
+			"whatArePasskeys": "Cosa sono le passkey?",
+			"passkeysDescription": "Le passkey sono un modo moderno e sicuro per accedere. Usano l'autenticazione biometrica del tuo dispositivo (impronta digitale, riconoscimento facciale) o un gestore di password come Bitwarden. Nessuna password da ricordare!",
+			"name": "Nome",
+			"namePlaceholder": "Il tuo nome",
+			"nameRequired": "Nome *",
+			"email": "Email",
+			"emailPlaceholder": "tua@email.com (opzionale)",
+			"emailDescription": "L'email ti permette di accedere su altri dispositivi tramite link magico. Ti consigliamo di aggiungerla per un accesso più facile tra dispositivi.",
+			"registerWithPasskey": "Registrati con passkey",
+			"preparing": "Preparazione registrazione passkey...",
+			"verifying": "Verifica della tua passkey...",
+			"registering": "Registrazione in corso...",
+			"creatingAccount": "Creazione del tuo account...",
+			"alreadyHaveAccount": "Hai già un account?",
+			"signIn": "Accedi",
+			"backToHome": "← Torna alla home",
+			"emailAlreadyRegisteredTip": "Suggerimento: Questa email potrebbe essere già registrata. Prova ad",
+			"signInInstead": "accedere",
+			"passkeyErrorTip": "Suggerimento: Assicurati che il tuo browser supporti le passkey e che tu permetta il prompt. Riprova o usa un browser diverso."
 		},
 		"logout": {
 			"title": "Esci",
 			"confirm": "Sei sicuro di voler uscire?",
-			"submit": "Esci"
+			"submit": "Esci",
+			"loggingOut": "Uscita in corso..."
+		},
+		"passkey": {
+			"saveOnDevice": "Salva una passkey su questo dispositivo",
+			"noPasskeyYet": "Non hai ancora salvato una passkey su questo dispositivo. Le passkey ti permettono di accedere rapidamente e in modo sicuro senza inserire la tua email.",
+			"biometricInfo": "Puoi usare l'autenticazione biometrica del tuo dispositivo (impronta digitale, riconoscimento facciale) o un gestore di password come Bitwarden.",
+			"savePasskey": "Salva passkey",
+			"dontAskAgain": "Non chiedere più",
+			"preparing": "Preparazione registrazione passkey...",
+			"verifying": "Verifica della tua passkey...",
+			"registering": "Registrazione in corso...",
+			"success": "Passkey salvata con successo! Ora puoi usarla per accedere rapidamente su questo dispositivo.",
+			"cancelledTip": "Nessun problema! Puoi saltare questo per ora. Puoi sempre aggiungere una passkey più tardi dalle impostazioni del tuo account.",
+			"browserSupportTip": "Suggerimento: Assicurati che il tuo browser supporti le passkey. Prova a usare Chrome, Firefox, Safari o Edge."
+		}
+	},
+	"pages": {
+		"home": {
+			"title": "DuoSync",
+			"description": "Sincronizza i tuoi calendari e trova slot liberi comuni",
+			"signIn": "Accedi",
+			"checkingPasskeys": "Controllo passkey disponibili...",
+			"redirecting": "Reindirizzamento...",
+			"signingIn": "Accesso in corso...",
+			"loading": "Caricamento...",
+			"or": "oppure",
+			"signInWithEmail": "Accedi con email",
+			"createNewAccount": "Crea nuovo account",
+			"passkeyCancelled": "Autenticazione passkey annullata. Reindirizzamento al login...",
+			"noPasskeysFound": "Nessuna passkey trovata. Reindirizzamento al login...",
+			"cancelledTip": "Nessun problema! Puoi",
+			"signInWithEmailLink": "Non hai una passkey? Accedi con email",
+			"instead": "invece.",
+			"dontHavePasskeyTip": "Non hai una passkey salvata?",
+			"orCreateAccount": "oppure",
+			"createAnAccount": "crea un account"
+		},
+		"dashboard": {
+			"title": "Dashboard",
+			"welcome": "Benvenuto, {name}!",
+			"accountInformation": "Informazioni account",
+			"name": "Nome",
+			"email": "Email",
+			"userId": "ID utente",
+			"features": "Funzionalità",
+			"featuresDescription": "Le funzionalità principali saranno disponibili qui.",
+			"loading": "Caricamento..."
 		}
 	},
 	"timeline": {

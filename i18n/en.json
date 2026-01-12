@@ -17,7 +17,8 @@
 		"filter": "Filter",
 		"select": "Select",
 		"all": "All",
-		"none": "None"
+		"none": "None",
+		"tip": "Tip"
 	},
 	"errors": {
 		"INTERVAL_INVALID": "The specified interval is invalid",
@@ -29,7 +30,17 @@
 		"VALIDATION_ERROR": "Validation error",
 		"RATE_LIMIT_EXCEEDED": "Too many requests, please try again later",
 		"NOT_FOUND": "Resource not found",
-		"INTERNAL_ERROR": "Internal server error"
+		"INTERNAL_ERROR": "Internal server error",
+		"UNEXPECTED_ERROR": "An unexpected error occurred",
+		"AUTH_CANCELLED": "Authentication was cancelled or not allowed. Please try again.",
+		"PASSKEY_ALREADY_REGISTERED": "This passkey is already registered. Please use a different one.",
+		"PASSKEY_NOT_SUPPORTED": "Passkeys are not supported on this device or browser. Please use magic link instead.",
+		"SECURITY_ERROR": "Security error occurred. Please ensure you're using HTTPS in production.",
+		"INVALID_REQUEST": "Invalid request. Please check your input.",
+		"AUTH_REQUIRED": "Authentication required. Please log in again.",
+		"RESOURCE_ALREADY_EXISTS": "This resource already exists.",
+		"TOO_MANY_REQUESTS": "Too many requests. Please wait a moment and try again.",
+		"SERVER_ERROR": "Server error. Please try again later."
 	},
 	"navigation": {
 		"home": "Home",
@@ -42,18 +53,102 @@
 	},
 	"auth": {
 		"login": {
-			"title": "Login",
+			"title": "Sign In",
 			"token": "Token",
 			"tokenPlaceholder": "Enter your token",
 			"submit": "Login",
 			"magicLink": "Send magic link via email",
 			"email": "Email",
-			"emailPlaceholder": "your@email.com"
+			"emailPlaceholder": "your@email.com",
+			"emailDescription": "We'll send you a magic link to sign in.",
+			"emailTip": "After signing in, consider saving a passkey for faster future logins.",
+			"sending": "Sending...",
+			"emailSent": "Email Sent!",
+			"sendMagicLink": "Send Magic Link",
+			"checkingAuth": "Checking authentication...",
+			"signingIn": "Signing you in...",
+			"dontHaveAccount": "Don't have an account?",
+			"createOne": "Create one",
+			"backToHome": "← Back to home",
+			"magicLinkSent": "Check your inbox! We've sent you a magic link to sign in. The link will expire in 15 minutes.",
+			"magicLinkExpiredTip": "Tip: Magic links expire after 15 minutes. Request a new one if needed.",
+			"accountNotFoundTip": "Tip: Make sure you're using the correct email address, or",
+			"createNewAccount": "create a new account"
+		},
+		"register": {
+			"title": "Create New Account",
+			"description": "Create your account with a passkey for secure and fast access",
+			"whatArePasskeys": "What are passkeys?",
+			"passkeysDescription": "Passkeys are a modern, secure way to sign in. They use your device's biometric authentication (fingerprint, face ID) or a password manager like Bitwarden. No passwords to remember!",
+			"name": "Name",
+			"namePlaceholder": "Your name",
+			"nameRequired": "Name *",
+			"email": "Email",
+			"emailPlaceholder": "your@email.com (optional)",
+			"emailDescription": "Email allows you to sign in on other devices via magic link. We recommend adding it for easier access across devices.",
+			"registerWithPasskey": "Register with Passkey",
+			"preparing": "Preparing passkey registration...",
+			"verifying": "Verifying your passkey...",
+			"registering": "Registering...",
+			"creatingAccount": "Creating your account...",
+			"alreadyHaveAccount": "Already have an account?",
+			"signIn": "Sign in",
+			"backToHome": "← Back to home",
+			"emailAlreadyRegisteredTip": "Tip: This email might already be registered. Try",
+			"signInInstead": "signing in",
+			"passkeyErrorTip": "Tip: Make sure your browser supports passkeys and that you allow the prompt. Try again or use a different browser."
 		},
 		"logout": {
 			"title": "Logout",
 			"confirm": "Are you sure you want to logout?",
-			"submit": "Logout"
+			"submit": "Logout",
+			"loggingOut": "Logging out..."
+		},
+		"passkey": {
+			"saveOnDevice": "Save a passkey on this device",
+			"noPasskeyYet": "You haven't saved a passkey on this device yet. Passkeys let you sign in quickly and securely without entering your email.",
+			"biometricInfo": "You can use your device's biometric authentication (fingerprint, face ID) or a password manager like Bitwarden.",
+			"savePasskey": "Save Passkey",
+			"dontAskAgain": "Don't ask again",
+			"preparing": "Preparing passkey registration...",
+			"verifying": "Verifying your passkey...",
+			"registering": "Registering...",
+			"success": "Passkey successfully saved! You can now use it to sign in quickly on this device.",
+			"cancelledTip": "No problem! You can skip this for now. You can always add a passkey later from your account settings.",
+			"browserSupportTip": "Tip: Make sure your browser supports passkeys. Try using Chrome, Firefox, Safari, or Edge."
+		}
+	},
+	"pages": {
+		"home": {
+			"title": "DuoSync",
+			"description": "Synchronize your calendar with friends",
+			"signIn": "Sign In",
+			"checkingPasskeys": "Checking for passkeys...",
+			"redirecting": "Redirecting...",
+			"signingIn": "Signing you in...",
+			"loading": "Loading...",
+			"or": "or",
+			"signInWithEmail": "Sign in with email",
+			"createNewAccount": "Create New Account",
+			"passkeyCancelled": "Passkey authentication cancelled. Redirecting to login...",
+			"noPasskeysFound": "No passkeys found. Redirecting to login...",
+			"cancelledTip": "No problem! You can",
+			"signInWithEmailLink": "Don't have a passkey? Sign in with email",
+			"instead": "instead.",
+			"dontHavePasskeyTip": "Don't have a passkey saved?",
+			"orCreateAccount": "or",
+			"createAnAccount": "create an account"
+		},
+		"dashboard": {
+			"title": "Dashboard",
+			"welcome": "Welcome, {name}!",
+			"accountInformation": "Account Information",
+			"name": "Name",
+			"email": "Email",
+			"userId": "User ID",
+			"features": "Features",
+			"featuresDescription": "Main features will be available here.",
+			"loading": "Loading..."
 		}
 	},
 	"timeline": {

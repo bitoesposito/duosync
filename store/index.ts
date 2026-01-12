@@ -6,11 +6,12 @@
 
 import { configureStore } from "@reduxjs/toolkit"
 import { setupListeners } from "@reduxjs/toolkit/query"
+import authSlice from "./slices/authSlice"
+import { authApi } from "./api/authApi"
 // Import slices and APIs as they are created
 // import { intervalsApi } from "./api/intervalsApi"
 // import { timelineApi } from "./api/timelineApi"
 // import { connectionsApi } from "./api/connectionsApi"
-// import authSlice from "./slices/authSlice"
 // import intervalsSlice from "./slices/intervalsSlice"
 // import timelineSlice from "./slices/timelineSlice"
 // import connectionsSlice from "./slices/connectionsSlice"
@@ -19,8 +20,9 @@ import { setupListeners } from "@reduxjs/toolkit/query"
 export const makeStore = () => {
 	return configureStore({
 		reducer: {
+			auth: authSlice,
+			[authApi.reducerPath]: authApi.reducer,
 			// Add slices and APIs here as they are created
-			// auth: authSlice,
 			// intervals: intervalsSlice,
 			// timeline: timelineSlice,
 			// connections: connectionsSlice,
@@ -31,6 +33,7 @@ export const makeStore = () => {
 		},
 		middleware: (getDefaultMiddleware) =>
 			getDefaultMiddleware()
+				.concat(authApi.middleware)
 				// Add RTK Query middleware here as APIs are created
 				// .concat(
 				// 	intervalsApi.middleware,
@@ -45,5 +48,7 @@ export type AppStore = ReturnType<typeof makeStore>
 export type RootState = ReturnType<AppStore["getState"]>
 export type AppDispatch = AppStore["dispatch"]
 
-// Setup listeners for RTK Query
-setupListeners(makeStore().dispatch)
+// Setup listeners for RTK Query (only on client side)
+if (typeof window !== "undefined") {
+	setupListeners(makeStore().dispatch)
+}

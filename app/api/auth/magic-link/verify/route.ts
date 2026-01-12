@@ -85,6 +85,36 @@ export async function GET(request: NextRequest) {
 			? "/dashboard" 
 			: `/dashboard?promptPasskey=true&email=${encodeURIComponent(email)}`
 		
+		// Check if this is a client-side fetch request (Accept header contains application/json)
+		// or if it's a direct browser navigation (from email link)
+		const acceptHeader = request.headers.get("accept") || ""
+		const isClientSideRequest = acceptHeader.includes("application/json")
+		
+		if (isClientSideRequest) {
+			// Return JSON for client-side navigation
+			const response = NextResponse.json({
+				success: true,
+				redirectUrl,
+				user: {
+					id: user.id,
+					name: user.name,
+					email: user.email,
+				},
+				hasPasskeys,
+			})
+			
+			// Store authentication token in cookie
+			response.cookies.set("auth_token", user.token, {
+				httpOnly: true,
+				secure: process.env.NODE_ENV === "production",
+				sameSite: "lax",
+				maxAge: 60 * 60 * 24 * 30, // 30 days
+			})
+			
+			return response
+		}
+		
+		// Browser navigation (from email link) - use redirect
 		const response = NextResponse.redirect(new URL(redirectUrl, request.url))
 		
 		// Store authentication token in cookie
