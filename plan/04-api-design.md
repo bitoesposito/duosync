@@ -2,6 +2,8 @@
 
 ## Timeline Computation (Backend Only)
 
+**Nota:** L'endpoint è in `app/api/timeline/route.ts` e usa `lib/services/timeline.service.ts` che orchestra gli algoritmi da `lib/algorithms/`.
+
 ### Endpoint
 
 ```
@@ -72,7 +74,7 @@ Standardizzati con error codes e messaggi sempre in inglese. Traduzione nel fron
 **Traduzione Frontend:**
 - Messaggi API sempre in inglese
 - Frontend traduce usando i18n basandosi sul `code`
-- Mapping `code` → traduzione in `messages/it.json` e `messages/en.json`
+- Mapping `code` → traduzione in `i18n/it.json` e `i18n/en.json`
 
 **Error Handling Frontend:**
 - Error boundaries React per sezioni critiche
@@ -81,6 +83,8 @@ Standardizzati con error codes e messaggi sempre in inglese. Traduzione nel fron
 - Traduzione automatica errori tramite i18n
 
 ## CRUD Intervalli
+
+**Nota:** Gli endpoint API sono in `app/api/intervals/` e usano la business logic da `lib/services/intervals.service.ts`.
 
 ### Create
 

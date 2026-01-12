@@ -1,19 +1,7 @@
 import type { NextConfig } from "next";
-import createNextIntlPlugin from "next-intl/plugin";
-
-const withNextIntl = createNextIntlPlugin("./i18n/i18n.ts");
 
 const nextConfig: NextConfig = {
-  webpack: (config, { dev }) => {
-    if (dev) {
-      config.watchOptions = {
-        poll: 1000,
-        aggregateTimeout: 300,
-        ignored: /node_modules/,
-      };
-    }
-    return config;
-  },
+  /* config options here */
 };
 
-export default withNextIntl(nextConfig);
+export default nextConfig;

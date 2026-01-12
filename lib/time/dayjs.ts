@@ -1,7 +1,15 @@
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
-import duration from "dayjs/plugin/duration";// dayjs configuration with required plugins
-dayjs.extend(utc);
-dayjs.extend(timezone);
-dayjs.extend(duration);export default dayjs;
+/**
+ * Day.js Configuration
+ * 
+ * Timezone and date/time utilities setup
+ */
+
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+import timezone from "dayjs/plugin/timezone"
+
+// Extend dayjs with plugins
+dayjs.extend(utc)
+dayjs.extend(timezone)
+
+export default dayjs

@@ -1,5 +1,7 @@
 # Algoritmi Core
 
+**Nota:** Gli algoritmi sono implementati in `lib/algorithms/` come funzioni pure (no side effects, condivise). La business logic che li orchestrazione è in `lib/services/`.
+
 ## Pipeline Backend (End-to-End)
 
 ### Query SQL Corretta (Range-Based, Scalabile)
@@ -319,3 +321,15 @@ Questo scala.
 
 Vedi [Rischi e Complessità](./08-risks.md) per edge cases da testare.
 
+## Struttura File Implementazione
+
+Gli algoritmi sono implementati in `lib/algorithms/` come funzioni pure:
+
+- `lib/algorithms/merge.service.ts` - Funzione `mergeIntervals()` con priorità
+- `lib/algorithms/recurrence.service.ts` - Funzione `resolveRecurrences()` con `rrule`
+- `lib/algorithms/complement.service.ts` - Funzione `calculateFreeSlots()` per slot liberi
+
+La business logic che orchestra questi algoritmi è in `lib/services/`:
+
+- `lib/services/timeline.service.ts` - Orchestrazione completa pipeline timeline (usa algoritmi da `lib/algorithms/`)
+- `lib/services/intervals.service.ts` - Business logic per CRUD intervalli

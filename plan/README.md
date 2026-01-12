@@ -32,9 +32,10 @@ Documentazione completa delle specifiche infrastrutturali per il refactor di Duo
 **Status:** ✅ **PRONTO PER IMPLEMENTAZIONE** - Tutte le decisioni integrate nella documentazione
 
 **Durante implementazione:**
-- Riferisciti a [Algoritmi Core](./03-algorithms.md) per logica business
-- Riferisciti a [API Design](./04-api-design.md) per endpoints
-- Riferisciti a [State Management](./05-state-management.md) per Redux
+- Riferisciti a [Setup Progetto](./15-project-setup.md) per struttura domain-based
+- Riferisciti a [Algoritmi Core](./03-algorithms.md) per logica business (`lib/algorithms/`)
+- Riferisciti a [API Design](./04-api-design.md) per endpoints (`app/api/`)
+- Riferisciti a [State Management](./05-state-management.md) per Redux (`store/`)
 
 ## Decisioni Architetturali Completate
 

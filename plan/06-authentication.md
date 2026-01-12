@@ -24,6 +24,8 @@
 
 ## NextAuth Configuration
 
+**Nota:** La configurazione NextAuth è in `app/api/auth/[...nextauth]/route.ts` e usa la business logic da `lib/services/auth.service.ts`.
+
 ```typescript
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";

@@ -1,60 +1,154 @@
 {
-  "common": {
-    "welcome": "Welcome",
-    "dashboard": "Dashboard",
-    "settings": "Settings",
-    "login": "Login",
-    "register": "Register",
-    "logout": "Logout",
-    "name": "Name",
-    "email": "Email",
-    "token": "Token",
-    "submit": "Submit",
-    "cancel": "Cancel",
-    "continue": "Continue"
-  },
-  "auth": {
-    "registerTitle": "Create a new account",
-    "registerDescription": "Enter your details and create a passkey",
-    "loginTitle": "Login to your account",
-    "loginDescription": "Choose how to login",
-    "loginMethod": "Login method",
-    "passkey": "Passkey",
-    "magicLink": "Magic Link",
-    "namePlaceholder": "Your name",
-    "emailPlaceholder": "your@email.com",
-    "tokenPlaceholder": "Paste your token here",
-    "registerSuccess": "Account created successfully! Your passkey has been saved in your browser.",
-    "loginSuccess": "Login successful!",
-    "magicLinkSent": "Magic link sent! Check your email.",
-    "emailRecoveryHint": "Used for account recovery",
-    "passkeyHint": "Optional: enter your email to find your passkey faster",
-    "passkeyLoginHint": "Use your saved passkey to login",
-    "magicLinkHint": "We'll send you a magic link to login. After login you can save a passkey."
-  },
-  "errors": {
-    "INTERVAL_INVALID": "The specified interval is invalid",
-    "CONNECTION_LIMIT_REACHED": "You have reached the maximum limit of 50 connections",
-    "RECURRENCE_INVALID": "The recurrence rule is invalid",
-    "UNAUTHORIZED": "Unauthorized",
-    "TIMELINE_TIMEOUT": "Timeline calculation timeout",
-    "NETWORK_ERROR": "Network error",
-    "VALIDATION_ERROR": "Validation error",
-    "RATE_LIMIT_EXCEEDED": "Too many requests, please try again later",
-    "INVALID_TOKEN": "Invalid or expired token",
-    "TOKEN_COLLISION": "Token generation error. Please try again.",
-    "INTERNAL_ERROR": "An internal error occurred",
-    "WEBAUTHN_NOT_SUPPORTED": "Your browser does not support passkeys",
-    "PASSKEY_CREATION_FAILED": "Failed to create passkey",
-    "PASSKEY_AUTH_FAILED": "Failed to authenticate with passkey",
-    "PASSKEY_ALREADY_EXISTS": "This passkey is already registered",
-    "PASSKEY_USER_CANCELLED": "Authentication cancelled",
-    "CHALLENGE_EXPIRED": "Session expired, please try again",
-    "INVALID_CREDENTIAL": "Invalid passkey",
-    "CREDENTIAL_EXISTS": "This passkey is already registered",
-    "VERIFICATION_FAILED": "Passkey verification failed",
-    "USER_NOT_FOUND": "User not found",
-    "EMAIL_ALREADY_EXISTS": "An account with this email already exists. Please login instead.",
-    "MAGIC_LINK_NOT_CONFIGURED": "Magic link not configured. Please configure EMAIL_SERVER to use this feature."
-  }
+	"common": {
+		"save": "Save",
+		"cancel": "Cancel",
+		"delete": "Delete",
+		"edit": "Edit",
+		"create": "Create",
+		"update": "Update",
+		"loading": "Loading...",
+		"error": "Error",
+		"success": "Success",
+		"confirm": "Confirm",
+		"close": "Close",
+		"back": "Back",
+		"next": "Next",
+		"search": "Search",
+		"filter": "Filter",
+		"select": "Select",
+		"all": "All",
+		"none": "None"
+	},
+	"errors": {
+		"INTERVAL_INVALID": "The specified interval is invalid",
+		"CONNECTION_LIMIT_REACHED": "You have reached the maximum limit of 50 connections",
+		"RECURRENCE_INVALID": "The recurrence rule is invalid",
+		"UNAUTHORIZED": "Unauthorized",
+		"TIMELINE_TIMEOUT": "Timeline calculation timeout",
+		"NETWORK_ERROR": "Network error",
+		"VALIDATION_ERROR": "Validation error",
+		"RATE_LIMIT_EXCEEDED": "Too many requests, please try again later",
+		"NOT_FOUND": "Resource not found",
+		"INTERNAL_ERROR": "Internal server error"
+	},
+	"navigation": {
+		"home": "Home",
+		"timeline": "Timeline",
+		"intervals": "Intervals",
+		"connections": "Connections",
+		"settings": "Settings",
+		"logout": "Logout",
+		"login": "Login"
+	},
+	"auth": {
+		"login": {
+			"title": "Login",
+			"token": "Token",
+			"tokenPlaceholder": "Enter your token",
+			"submit": "Login",
+			"magicLink": "Send magic link via email",
+			"email": "Email",
+			"emailPlaceholder": "your@email.com"
+		},
+		"logout": {
+			"title": "Logout",
+			"confirm": "Are you sure you want to logout?",
+			"submit": "Logout"
+		}
+	},
+	"timeline": {
+		"title": "Timeline",
+		"empty": "No intervals available",
+		"loading": "Loading timeline...",
+		"selectUsers": "Select users",
+		"selectDate": "Select date",
+		"freeSlots": "Free slots",
+		"busySlots": "Busy slots",
+		"match": "Available",
+		"sleep": "Sleep",
+		"busy": "Busy",
+		"other": "Other"
+	},
+	"intervals": {
+		"title": "Intervals",
+		"create": {
+			"title": "Create interval",
+			"start": "Start",
+			"end": "End",
+			"category": "Category",
+			"description": "Description",
+			"recurrence": "Recurrence",
+			"submit": "Create"
+		},
+		"edit": {
+			"title": "Edit interval",
+			"submit": "Update"
+		},
+		"delete": {
+			"title": "Delete interval",
+			"confirm": "Are you sure you want to delete this interval?",
+			"submit": "Delete"
+		},
+		"categories": {
+			"sleep": "Sleep",
+			"busy": "Busy",
+			"other": "Other"
+		},
+		"recurrence": {
+			"none": "None",
+			"daily": "Daily",
+			"weekly": "Weekly",
+			"monthly": "Monthly",
+			"daysOfWeek": {
+				"monday": "Monday",
+				"tuesday": "Tuesday",
+				"wednesday": "Wednesday",
+				"thursday": "Thursday",
+				"friday": "Friday",
+				"saturday": "Saturday",
+				"sunday": "Sunday"
+			},
+			"until": "Until",
+			"infinite": "Infinite"
+		}
+	},
+	"connections": {
+		"title": "Connections",
+		"empty": "No connections",
+		"pending": "Pending",
+		"accepted": "Accepted",
+		"blocked": "Blocked",
+		"request": {
+			"title": "Request connection",
+			"submit": "Send request"
+		},
+		"accept": {
+			"title": "Accept connection",
+			"submit": "Accept"
+		},
+		"block": {
+			"title": "Block connection",
+			"confirm": "Are you sure you want to block this connection?",
+			"submit": "Block"
+		},
+		"remove": {
+			"title": "Remove connection",
+			"confirm": "Are you sure you want to remove this connection?",
+			"submit": "Remove"
+		},
+		"visibility": {
+			"title": "Visibility",
+			"canSee": "Can see my appointments",
+			"cannotSee": "Cannot see my appointments"
+		}
+	},
+	"validation": {
+		"required": "Required field",
+		"invalidEmail": "Invalid email",
+		"invalidDate": "Invalid date",
+		"invalidTime": "Invalid time",
+		"endBeforeStart": "End must be after start",
+		"maxDuration": "Maximum duration is 7 days",
+		"invalidRecurrence": "Invalid recurrence rule"
+	}
 }

@@ -15,6 +15,8 @@
 
 ## API Endpoints
 
+**Nota:** Gli endpoint sono in `app/api/connections/` e usano la business logic da `lib/services/connections.service.ts`.
+
 ```
 POST /api/connections/request { addresseeId }
 GET  /api/connections (list all connections with status, include otherUser data)
@@ -31,21 +33,34 @@ Vedi [State Management](./05-state-management.md) per dettagli su Redux slice e 
 **Custom Hook (Public API):**
 
 ```typescript
-// features/connections/index.ts
+// hooks/use-connections.ts
 export function useConnections() {
-  const { acceptedConnections, visibleUserIds, requestConnection } = useConnections();
+  const { data: connections, isLoading } = useGetConnectionsQuery();
+  const dispatch = useAppDispatch();
+  
+  const acceptedConnections = useMemo(() => 
+    connections?.filter(c => c.status === 'accepted') || [], 
+    [connections]
+  );
+  
+  const visibleUserIds = useMemo(() => 
+    acceptedConnections
+      .filter(c => c.canSeeAppointments)
+      .map(c => c.requesterId === currentUserId ? c.addresseeId : c.requesterId),
+    [acceptedConnections]
+  );
   
   return {
     connections,
     acceptedConnections,
     visibleUserIds,
-    pendingSent,
-    pendingReceived,
-    requestConnection,
-    acceptConnection,
-    blockConnection,
-    toggleVisibility,
-    removeConnection,
+    pendingSent: connections?.filter(c => c.status === 'pending' && c.requesterId === currentUserId) || [],
+    pendingReceived: connections?.filter(c => c.status === 'pending' && c.addresseeId === currentUserId) || [],
+    requestConnection: (addresseeId: number) => dispatch(requestConnection(addresseeId)),
+    acceptConnection: (id: number) => dispatch(acceptConnection(id)),
+    blockConnection: (id: number) => dispatch(blockConnection(id)),
+    toggleVisibility: (id: number, canSee: boolean) => dispatch(toggleVisibility({ id, canSeeAppointments: canSee })),
+    removeConnection: (id: number) => dispatch(removeConnection(id)),
     isLoading,
   };
 }

@@ -41,12 +41,22 @@ Quando mancano elementi UX critici per la logica, segnalare:
 
 ### Hooks Pattern
 
+**Nota:** Gli hooks sono in `hooks/` come public API wrappers su Redux e RTK Query.
+
 ```typescript
-// ✅ Implementare: Hook con logica
+// ✅ Implementare: Hook con logica in hooks/use-intervals.ts
 export function useIntervals(date: string) {
   const { data, isLoading, error } = useGetIntervalsQuery(date);
-  // Logica business qui
-  return { intervals: data, isLoading, error };
+  const dispatch = useAppDispatch();
+  
+  return {
+    intervals: data,
+    isLoading,
+    error,
+    create: (interval) => dispatch(createInterval(interval)),
+    update: (id, interval) => dispatch(updateInterval({ id, ...interval })),
+    remove: (id) => dispatch(deleteInterval(id)),
+  };
 }
 
 // ⚠️ Segnalare: Componente UI necessario
@@ -58,13 +68,26 @@ export function useIntervals(date: string) {
 
 ### RTK Query Pattern
 
+**Nota:** Le RTK Query APIs sono in `store/api/` organizzate per dominio.
+
 ```typescript
-// ✅ Implementare: API endpoint
+// ✅ Implementare: API endpoint in store/api/intervalsApi.ts
 export const intervalsApi = createApi({
+  reducerPath: 'intervalsApi',
+  baseQuery: fetchBaseQuery({ baseUrl: '/api' }),
+  tagTypes: ['Intervals'],
   endpoints: (builder) => ({
     getIntervals: builder.query<Interval[], string>({
-      query: (date) => `/api/intervals?date=${date}`,
+      query: (date) => `/intervals?date=${date}`,
       providesTags: ['Intervals'],
+    }),
+    createInterval: builder.mutation<Interval, CreateIntervalInput>({
+      query: (body) => ({
+        url: '/intervals',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Intervals'],
     }),
   }),
 });
@@ -110,7 +133,7 @@ Quando implementi logica, verifica e segnala se mancano:
 
 **Struttura:**
 ```
-messages/
+i18n/
   it.json
   en.json
 ```
@@ -126,7 +149,7 @@ messages/
 - Frontend mappa `code` → traduzione usando i18n
 - Esempio mapping:
   ```json
-  // messages/it.json
+  // i18n/it.json
   {
     "errors": {
       "INTERVAL_INVALID": "L'intervallo specificato non è valido",

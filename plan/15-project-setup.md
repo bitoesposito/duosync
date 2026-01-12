@@ -2,62 +2,90 @@
 
 ## Struttura Progetto
 
+**Nota:** Struttura **Domain-Based** organizzata per dominio (intervalli, timeline, connessioni) invece di feature-based. La logica di business è separata in `lib/algorithms/` (algoritmi puri) e `lib/services/` (business logic), mentre gli hooks sono in `hooks/` come public API.
+
 ```
 duosync/
-├── app/                    # Next.js App Router
-│   ├── (auth)/            # Route group per autenticazione
+├── app/                          # Next.js App Router
+│   ├── (auth)/                  # Route group per autenticazione
 │   │   ├── login/
 │   │   └── magic-link/
-│   ├── (dashboard)/       # Route group per dashboard
+│   ├── (dashboard)/             # Route group per dashboard
 │   │   ├── timeline/
 │   │   ├── intervals/
 │   │   └── connections/
-│   ├── api/               # API routes
+│   ├── api/                     # API routes (organizzate per dominio)
 │   │   ├── timeline/
 │   │   ├── intervals/
 │   │   ├── connections/
 │   │   └── auth/
 │   └── layout.tsx
-├── lib/
-│   ├── db/
-│   │   ├── schema.ts       # Drizzle schema
-│   │   ├── index.ts        # DB connection
-│   │   └── migrations/    # Drizzle migrations
-│   ├── env.ts             # Environment variables con default
-│   ├── time/
-│   │   └── dayjs.ts       # dayjs configuration
-│   └── utils/
-│       ├── errors.ts      # Error codes e utilities
-│       └── validation.ts  # Zod schemas
-├── store/                 # Redux store
-│   ├── index.ts           # Store configuration
-│   ├── hooks.ts           # Typed hooks
-│   ├── slices/
+│
+├── lib/                          # Business logic e utilities
+│   ├── db/                      # Database layer
+│   │   ├── schema.ts           # Drizzle schema
+│   │   ├── index.ts            # DB connection
+│   │   └── migrations/         # Drizzle migrations
+│   │
+│   ├── algorithms/              # Algoritmi puri (condivisi)
+│   │   ├── merge.service.ts    # Merge intervalli con priorità
+│   │   ├── recurrence.service.ts # Risoluzione ricorrenze
+│   │   └── complement.service.ts # Calcolo slot liberi
+│   │
+│   ├── services/                # Business logic services
+│   │   ├── intervals.service.ts # Logica business intervalli
+│   │   ├── timeline.service.ts  # Logica business timeline
+│   │   ├── connections.service.ts # Logica business connessioni
+│   │   └── auth.service.ts      # Logica business auth
+│   │
+│   ├── time/                    # Timezone utilities
+│   │   └── dayjs.ts
+│   │
+│   ├── utils/                   # Utilities generiche
+│   │   ├── errors.ts          # Error codes e utilities
+│   │   └── validation.ts      # Zod schemas
+│   │
+│   └── env.ts                   # Environment variables con default
+│
+├── store/                       # Redux store (organizzato per dominio)
+│   ├── index.ts                # Store configuration
+│   ├── hooks.ts                # Typed hooks
+│   ├── slices/                 # Redux slices per dominio
 │   │   ├── authSlice.ts
 │   │   ├── intervalsSlice.ts
 │   │   ├── timelineSlice.ts
 │   │   ├── connectionsSlice.ts
 │   │   └── uiSlice.ts
-│   └── api/
+│   └── api/                    # RTK Query APIs
 │       ├── intervalsApi.ts
 │       ├── timelineApi.ts
 │       └── connectionsApi.ts
-├── features/              # Feature-based organization
-│   ├── intervals/
-│   │   ├── hooks/
-│   │   ├── components/    # Solo logica, no layout
-│   │   └── index.ts
-│   ├── timeline/
-│   ├── connections/
-│   └── auth/
-├── components/            # Componenti UI condivisi (shadcn/ui)
-│   └── ui/               # shadcn/ui components
-├── messages/             # i18n translations
+│
+├── hooks/                       # Hooks riutilizzabili (wrappers su Redux)
+│   ├── use-intervals.ts        # Wrapper su intervalsSlice + intervalsApi
+│   ├── use-timeline.ts         # Wrapper su timelineSlice + timelineApi
+│   ├── use-connections.ts      # Wrapper su connectionsSlice + connectionsApi
+│   └── index.ts                # Barrel export
+│
+├── components/                  # Componenti UI (organizzati per dominio)
+│   ├── ui/                     # shadcn/ui components
+│   ├── timeline/               # Timeline components
+│   ├── intervals/              # Interval components
+│   └── connections/            # Connection components
+│
+├── types/                       # Type definitions globali
+│   ├── interval.ts
+│   ├── connection.ts
+│   ├── timeline.ts
+│   └── index.ts
+│
+├── i18n/                        # i18n translations
 │   ├── it.json
 │   └── en.json
+│
 ├── public/
 ├── .env.example
-├── .env.local            # Non committato
+├── .env.local                  # Non committato
 ├── package.json
 ├── tsconfig.json
 ├── next.config.ts
@@ -88,48 +116,47 @@ export default nextConfig;
 
 ```bash
 # Core
-npm install next@latest react@latest react-dom@latest
+pnpm install next@latest react@latest react-dom@latest
 
 # Database
-npm install drizzle-orm drizzle-kit pg
-npm install -D @types/pg
+pnpm install drizzle-orm drizzle-kit pg
+pnpm install -D @types/pg
 
 # Auth
-npm install next-auth@beta
+pnpm install next-auth@beta
 
 # State Management
-npm install @reduxjs/toolkit react-redux
-npm install next-redux-wrapper
+pnpm install @reduxjs/toolkit react-redux
+pnpm install next-redux-wrapper
 
 # Date/Time
-npm install dayjs
-npm install dayjs-timezone
-npm install rrule
+pnpm install dayjs
+pnpm install dayjs-timezone
+pnpm install rrule
 
 # UI
 npx shadcn-ui@latest init
-npx shadcn-ui@latest add button input dialog toast tooltip
 
 # i18n
-npm install next-intl
+pnpm install next-intl
 
 # Logging
-npm install pino
+pnpm install pino
 
 # Rate Limiting
-npm install @upstash/ratelimit @upstash/redis
+pnpm install @upstash/ratelimit @upstash/redis
 # OPPURE
-npm install rate-limiter-flexible
+pnpm install rate-limiter-flexible
 
 # Validation
-npm install zod
+pnpm install zod
 
 # Email (opzionale)
-npm install resend
+pnpm install resend
 
 # Testing
-npm install -D vitest @testing-library/react @testing-library/jest-dom
-npm install -D @playwright/test  # Per E2E
+pnpm install -D vitest @testing-library/react @testing-library/jest-dom
+pnpm install -D @playwright/test  # Per E2E
 ```
 
 ### 3. Configurazione TypeScript
@@ -352,7 +379,7 @@ export const useAppStore = useStore.withTypes<AppStore>();
 
 ### 10. Configurazione i18n Base
 
-**`messages/it.json`:**
+**`i18n/it.json`:**
 ```json
 {
   "errors": {
@@ -368,7 +395,7 @@ export const useAppStore = useStore.withTypes<AppStore>();
 }
 ```
 
-**`messages/en.json`:**
+**`i18n/en.json`:**
 ```json
 {
   "errors": {
@@ -398,13 +425,25 @@ export const useAppStore = useStore.withTypes<AppStore>();
 - [ ] Redux store configurato base
 - [ ] i18n configurato base
 - [ ] shadcn/ui inizializzato
-- [ ] Struttura cartelle creata
+- [ ] Struttura cartelle domain-based creata:
+  - [ ] `lib/algorithms/` per algoritmi puri
+  - [ ] `lib/services/` per business logic
+  - [ ] `hooks/` per public API wrappers
+  - [ ] `components/[domain]/` per componenti organizzati per dominio
 
 ## Prossimi Step
 
-1. ⏭️ Creare schema DB completo
-2. ⏭️ Implementare algoritmi core
-3. ⏭️ Creare API endpoints
-4. ⏭️ Integrare Redux con Next.js SSR
-5. ⏭️ Implementare frontend logica
+1. ⏭️ Creare schema DB completo in `lib/db/schema.ts`
+2. ⏭️ Implementare algoritmi core in `lib/algorithms/`:
+   - `merge.service.ts` - Merge intervalli
+   - `recurrence.service.ts` - Risoluzione ricorrenze
+   - `complement.service.ts` - Calcolo slot liberi
+3. ⏭️ Implementare business logic services in `lib/services/`:
+   - `intervals.service.ts` - CRUD intervalli
+   - `timeline.service.ts` - Calcolo timeline (usa algoritmi)
+   - `connections.service.ts` - Gestione connessioni
+4. ⏭️ Creare API endpoints in `app/api/` che usano i services
+5. ⏭️ Integrare Redux con Next.js SSR
+6. ⏭️ Implementare hooks in `hooks/` come public API
+7. ⏭️ Implementare componenti in `components/[domain]/`
 

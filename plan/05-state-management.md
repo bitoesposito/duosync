@@ -29,9 +29,9 @@ store/
 
 ## Regole
 
-- Ogni feature ha il suo slice in `store/slices/`
-- RTK Query API in `store/api/`
-- Hooks esposti in `features/*/index.ts` (barrel export, wrappano Redux hooks)
+- Ogni dominio ha il suo slice in `store/slices/` (intervals, connections, timeline, auth, ui)
+- RTK Query API in `store/api/` (organizzate per dominio)
+- Hooks esposti in `hooks/` (barrel export, wrappano Redux hooks e RTK Query)
 - Nessun accesso diretto allo store dai components
 - Selectors memoizzati con `createSelector` (reselect)
 
@@ -40,7 +40,7 @@ store/
 **API Errors:**
 - API restituisce sempre messaggi in inglese + `code`
 - Frontend traduce usando i18n basandosi sul `code`
-- Mapping error codes → traduzioni in `messages/it.json` e `messages/en.json`
+- Mapping error codes → traduzioni in `i18n/it.json` e `i18n/en.json`
 
 **Esempio:**
 ```typescript

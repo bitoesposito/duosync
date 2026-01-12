@@ -47,14 +47,14 @@
 - Validare performance
 
 **Task:**
-1. ✅ Implementare `mergeIntervals()` con priorità
+1. ✅ Implementare `mergeIntervals()` in `lib/algorithms/merge.service.ts` con priorità
 2. ✅ Test unitari per tutti gli edge cases:
    - Overlap parziale
    - Overlap completo
    - Boundary cases (start === end)
    - 3+ intervalli sovrapposti
    - Priorità sleep > busy > other
-3. ✅ Implementare `resolveRecurrences()` con `rrule`
+3. ✅ Implementare `resolveRecurrences()` in `lib/algorithms/recurrence.service.ts` con `rrule`
 4. ✅ Test edge cases ricorrenze:
    - DST transitions
    - Leap years
@@ -64,9 +64,14 @@
 6. ✅ Profiling e ottimizzazione se necessario
 
 **Deliverable:**
-- Funzioni core testate e documentate
+- Funzioni core testate e documentate in `lib/algorithms/`
 - Test suite completa
 - Benchmark results
+
+**Struttura File:**
+- `lib/algorithms/merge.service.ts` - Funzione `mergeIntervals()`
+- `lib/algorithms/recurrence.service.ts` - Funzione `resolveRecurrences()`
+- `lib/algorithms/complement.service.ts` - Funzione `calculateFreeSlots()`
 
 ## Fase 3: Backend API + Validazione
 
@@ -76,8 +81,9 @@
 - Error handling
 
 **Task:**
-1. ✅ Implementare `/api/timeline` endpoint
-2. ✅ Validazione input (date format, userIds array)
+1. ✅ Implementare `/api/timeline` endpoint in `app/api/timeline/route.ts`
+2. ✅ Implementare business logic in `lib/services/timeline.service.ts` (usa algoritmi da `lib/algorithms/`)
+3. ✅ Validazione input (date format, userIds array)
 3. ✅ Error handling:
    - DB errors → 500 con messaggio generico
    - Invalid input → 400 con messaggio specifico
@@ -147,8 +153,9 @@
 
 **Task:**
 1. ✅ Installare e configurare shadcn/ui
-2. ✅ Creare timeline slice + RTK Query API
-3. ✅ Implementare logica Timeline (hooks, selectors)
+2. ✅ Creare timeline slice in `store/slices/timelineSlice.ts` + RTK Query API in `store/api/timelineApi.ts`
+3. ✅ Implementare hook `useTimeline()` in `hooks/use-timeline.ts` (wrapper su Redux)
+4. ✅ Implementare componenti timeline in `components/timeline/`
 4. ✅ ⚠️ Segnalare elementi UX necessari:
    - Skeleton UI durante loading
    - Error boundary per errori

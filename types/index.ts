@@ -1,67 +1,72 @@
 /**
- * Global domain types
- * All global domain types are exported from here
+ * Global Type Definitions
+ * 
+ * Type definitions shared across the application
  */
 
-import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
-import {
-  users,
-  userConnections,
-  busyIntervals,
-  recurrenceExceptions,
-  pushSubscriptions,
-} from "@/lib/db/schema";
-
-// User types
-export type User = InferSelectModel<typeof users>;
-export type UserInsert = InferInsertModel<typeof users>;
-
-// User connection types
-export type UserConnection = InferSelectModel<typeof userConnections>;
-export type UserConnectionInsert = InferInsertModel<typeof userConnections>;
-export type ConnectionStatus = "pending" | "accepted" | "blocked";
-
-// Busy interval types
-export type BusyInterval = InferSelectModel<typeof busyIntervals>;
-export type BusyIntervalInsert = InferInsertModel<typeof busyIntervals>;
-export type IntervalCategory = "sleep" | "busy" | "other";
+// Interval types
+export interface Interval {
+	id: number
+	userId: number
+	startTs: Date
+	endTs: Date
+	category: "sleep" | "busy" | "other"
+	description?: string | null
+	recurrenceRule?: RecurrenceRule | null
+	createdAt: Date
+	updatedAt: Date
+}
 
 // Recurrence rule types
-export type RecurrenceRule =
-  | WeeklyRecurrenceRule
-  | DailyRecurrenceRule
-  | MonthlyRecurrenceRule;
-
-export interface BaseRecurrenceRule {
-  type: "weekly" | "daily" | "monthly";
-  daysOfWeek: number[]; // 1=Monday, 7=Sunday
-  until: string | null; // ISO timestamp or null for infinite
+export interface RecurrenceRule {
+	type: "weekly" | "daily" | "monthly"
+	daysOfWeek: number[] // 1=Monday, 7=Sunday
+	until?: string | null // ISO timestamp, null = infinite
+	// Monthly-specific fields (mutually exclusive)
+	dayOfMonth?: number // 1-31, or -1/"last" for last day of month
+	byWeekday?: string // "first-monday", "last-friday", etc.
 }
 
-export interface WeeklyRecurrenceRule extends BaseRecurrenceRule {
-  type: "weekly";
+export interface RecurrenceException {
+	id: number
+	recurrenceId: number
+	exceptionDate: Date
+	modifiedInterval?: ModifiedInterval | null
+	createdAt: Date
 }
-
-export interface DailyRecurrenceRule extends BaseRecurrenceRule {
-  type: "daily";
-}
-
-export interface MonthlyRecurrenceRule extends BaseRecurrenceRule {
-  type: "monthly";
-  dayOfMonth?: number; // 1-31, or -1/"last" for last day of month
-  byWeekday?: string; // "first-monday", "last-friday", etc.
-}
-
-// Recurrence exception types
-export type RecurrenceException = InferSelectModel<typeof recurrenceExceptions>;
-export type RecurrenceExceptionInsert = InferInsertModel<typeof recurrenceExceptions>;
 
 export interface ModifiedInterval {
-  start_ts?: string; // ISO timestamp
-  end_ts?: string; // ISO timestamp
-  category?: IntervalCategory;
+	start_ts: string // ISO timestamp
+	end_ts: string // ISO timestamp
+	category: "sleep" | "busy" | "other"
 }
 
-// Push subscription types
-export type PushSubscription = InferSelectModel<typeof pushSubscriptions>;
-export type PushSubscriptionInsert = InferInsertModel<typeof pushSubscriptions>;
+// Connection types
+export interface UserConnection {
+	id: number
+	requesterId: number
+	addresseeId: number
+	status: "pending" | "accepted" | "blocked"
+	canSeeAppointments: boolean
+	createdAt: Date
+	updatedAt: Date
+}
+
+// Timeline types
+export interface TimelineSegment {
+	start: string // HH:mm format (already converted to user timezone)
+	end: string // HH:mm format
+	category: "match" | "sleep" | "busy" | "other"
+}
+
+// User types
+export interface User {
+	id: number
+	email?: string | null
+	emailVerified?: Date | null
+	name: string
+	token: string
+	timezone: string
+	createdAt: Date
+	updatedAt: Date
+}
