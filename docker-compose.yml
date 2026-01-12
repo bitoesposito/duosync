@@ -16,10 +16,10 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_DB=${POSTGRES_DB:-duosync}
-    volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/.next
+    # volumes:
+      # - .:/app
+      # - /app/node_modules
+      # - /app/.next
     stdin_open: true
     tty: true
     depends_on:
