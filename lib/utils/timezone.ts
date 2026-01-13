@@ -55,6 +55,22 @@ export function localToUTC(
 }
 
 /**
+ * Convert UTC timestamp to local Date object (in user timezone)
+ * 
+ * @param timestamp - UTC timestamp (Date or ISO string)
+ * @param timezone - User timezone
+ * @returns Date object in user timezone (keep in mind JS Date is always local/UTC, 
+ *          but dayjs wrapping this will have the correct offset)
+ *          Actually returning ISO string is safer for dayjs re-parsing with timezone
+ */
+export function UTCtoLocal(
+	timestamp: Date | string,
+	timezone: string = "UTC"
+): string {
+	return dayjs(timestamp).tz(timezone).format()
+}
+
+/**
  * Get current date in UTC (YYYY-MM-DD)
  * 
  * @returns Date string in YYYY-MM-DD format

@@ -53,10 +53,12 @@ export interface UserConnection {
 }
 
 // Timeline types
+export type TimelineSegmentCategory = "match" | "sleep" | "busy" | "other" | "available"
+
 export interface TimelineSegment {
 	start: string // HH:mm format (already converted to user timezone)
 	end: string // HH:mm format
-	category: "match" | "sleep" | "busy" | "other"
+	category: TimelineSegmentCategory
 }
 
 // User types

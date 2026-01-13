@@ -41,3 +41,7 @@ next-env.d.ts
 
 # docker
 db_data/
+
+# agent
+/.agent
+/.cursor

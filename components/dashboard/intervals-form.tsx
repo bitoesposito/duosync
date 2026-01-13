@@ -1,31 +1,34 @@
 /**
  * Intervals Form Component
  * 
- * Improved form with better UX inspired by the old appointments form:
+ * Improved form with better UX:
  * - Collapsible on mobile
- * - Better category selector
- * - Improved recurrence with day selection
- * - Description only shown for "other" category
- * - Better styling with separators and uppercase labels
+ * - Drafting Mode (Batch Creation)
+ * - Smart start time auto-fill
+ * - Separated concerns via sub-components
  */
 
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
-import { ChevronDownIcon, ChevronUpIcon, MoonIcon, CalendarIcon, ClockIcon } from "lucide-react"
+import { ChevronDownIcon, ChevronUpIcon, Loader2Icon, PlusIcon, CheckIcon, SaveIcon, Trash2Icon } from "lucide-react"
 import { useI18n } from "@/hooks/use-i18n"
 import { useIntervals } from "@/hooks/use-intervals"
 import { useAuth } from "@/hooks/use-auth"
-import { Loading, ErrorAlert, SuccessAlert } from "@/components/ui"
 import { localToUTC } from "@/lib/utils/timezone"
 import type { CreateIntervalInput } from "@/store/api/intervalsApi"
 import type { RecurrenceRule } from "@/types"
+import { TimeInputs } from "./form/time-inputs"
+import { CategorySelector, type Category } from "./form/category-selector"
+import { RecurrenceSection } from "./form/recurrence"
+import { findFirstAvailableSlot } from "@/lib/services/slot-finder.service"
+import { cn } from "@/lib/utils"
 
 interface FormData {
 	date: string // YYYY-MM-DD
 	startTime: string // HH:mm
 	endTime: string // HH:mm
-	category: "sleep" | "busy" | "other"
+	category: Category
 	description: string
 	isRepeating: boolean
 	recurrenceType: "daily" | "weekly" | "monthly" | null
@@ -33,24 +36,22 @@ interface FormData {
 	recurrenceUntil: string // YYYY-MM-DD or empty
 }
 
-const DAY_LABELS = ["L", "M", "M", "G", "V", "S", "D"]
-const DAY_IDS = [1, 2, 3, 4, 5, 6, 7]
-const WEEKDAYS = [1, 2, 3, 4, 5] // Monday to Friday
-const WEEKEND = [6, 7] // Saturday and Sunday
 const ALL_WEEK = [1, 2, 3, 4, 5, 6, 7]
 
 export default function IntervalsForm() {
 	const { t } = useI18n()
 	const { user } = useAuth()
-	const { selectedDate, intervals, create, isSaving, refetch } = useIntervals()
-	const [isOpen, setIsOpen] = useState(false) // Collapsed on mobile by default
-	
+	const { selectedDate, intervals, create, isSaving, refetch, isLoading, setDate } = useIntervals()
+	const [isOpen, setIsOpen] = useState(false)
+
+	const [drafts, setDrafts] = useState<FormData[]>([])
+
 	const [formData, setFormData] = useState<FormData>(() => {
 		const today = selectedDate || new Date().toISOString().split("T")[0]
 		return {
 			date: today,
-			startTime: "09:00",
-			endTime: "17:00",
+			startTime: "",
+			endTime: "",
 			category: "other",
 			description: "",
 			isRepeating: false,
@@ -59,122 +60,126 @@ export default function IntervalsForm() {
 			recurrenceUntil: "",
 		}
 	})
-	
+
 	const [error, setError] = useState<string | null>(null)
 	const [success, setSuccess] = useState(false)
+	const [hasUserEditedTimes, setHasUserEditedTimes] = useState(false)
+	const [isValid, setIsValid] = useState(false)
 
-	// Reset form when date changes
+	// Sync form date with global selected date
 	useEffect(() => {
 		if (selectedDate && selectedDate !== formData.date) {
-			setFormData((prev) => ({ ...prev, date: selectedDate }))
+			setFormData((prev) => ({
+				...prev,
+				date: selectedDate,
+				// Reset times on date change
+				startTime: "",
+				endTime: "",
+			}))
+			setHasUserEditedTimes(false)
 		}
 	}, [selectedDate])
 
-	const handleChange = useCallback((field: keyof FormData, value: string | boolean | number[]) => {
+	// Smart Time Auto-fill
+	useEffect(() => {
+		if (user && !isLoading && !formData.startTime && !hasUserEditedTimes && intervals) {
+			const firstSlot = findFirstAvailableSlot(
+				intervals,
+				formData.date,
+				user.timezone || "UTC"
+			)
+
+			if (firstSlot) {
+				const [h, m] = firstSlot.split(":").map(Number)
+				const endH = (h + 1) % 24
+				const endSlot = `${String(endH).padStart(2, "0")}:${String(m).padStart(2, "0")}`
+
+				setFormData(prev => ({
+					...prev,
+					startTime: firstSlot,
+					endTime: endSlot
+				}))
+			} else {
+				setFormData(prev => ({ ...prev, startTime: "09:00", endTime: "10:00" }))
+			}
+		}
+	}, [user, isLoading, hasUserEditedTimes, intervals, formData.date, formData.startTime])
+
+	const handleChange = useCallback((field: keyof FormData, value: any) => {
 		setFormData((prev) => ({ ...prev, [field]: value }))
 		setError(null)
 	}, [])
 
-	const handleRepeatDaysChange = useCallback((days: number[]) => {
-		// Sort days to ensure consistent display
-		const sorted = [...days].sort((a, b) => a - b)
-		handleChange("repeatDays", sorted)
-	}, [handleChange])
+	const handleDateChange = (date: string) => {
+		handleChange("date", date)
+		setDate(date) // Update global context to fetch intervals for overlap check
+	}
 
-	const handlePresetClick = useCallback((type: "daily" | "weekly" | "monthly") => {
+	const handleTimeChange = (type: "startTime" | "endTime", value: string) => {
+		handleChange(type, value)
+		setHasUserEditedTimes(true)
+	}
+
+	const handleRecurrenceTypeChange = useCallback((type: "daily" | "weekly" | "monthly") => {
+		handleChange("recurrenceType", type)
 		if (type === "daily") {
-			handleChange("recurrenceType", "daily")
-			handleRepeatDaysChange(ALL_WEEK)
+			handleChange("repeatDays", ALL_WEEK)
 		} else if (type === "weekly") {
-			handleChange("recurrenceType", "weekly")
-			// For weekly, use the day of the selected date
 			const date = new Date(formData.date)
 			const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay()
-			handleRepeatDaysChange([dayOfWeek])
+			handleChange("repeatDays", [dayOfWeek])
 		} else if (type === "monthly") {
-			handleChange("recurrenceType", "monthly")
-			// For monthly, use the day of week from selected date
-			const date = new Date(formData.date)
-			const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay()
-			handleRepeatDaysChange([dayOfWeek])
+			handleChange("repeatDays", [])
 		}
-	}, [formData.date, handleChange, handleRepeatDaysChange])
+	}, [formData.date, handleChange])
 
-	const validateForm = (): string | null => {
-		// Validate time format
-		const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/
-		if (!timeRegex.test(formData.startTime) || !timeRegex.test(formData.endTime)) {
-			return t("validation.invalidTime")
-		}
+	const validateForm = (data: FormData): string | null => {
+		const start = new Date(`${data.date}T${data.startTime}`)
+		const end = new Date(`${data.date}T${data.endTime}`)
 
-		// Validate end is after start (handle next day case)
-		const start = new Date(`${formData.date}T${formData.startTime}`)
-		const end = new Date(`${formData.date}T${formData.endTime}`)
-		
-		// Handle case where end time is next day (e.g., 22:00 - 02:00)
-		if (formData.endTime <= formData.startTime) {
+		if (data.endTime <= data.startTime) {
 			end.setDate(end.getDate() + 1)
 		}
 
-		if (end <= start) {
-			return t("validation.endBeforeStart")
-		}
+		if (end <= start) return "End time must be after start time"
 
-		// Validate duration <= 7 days
 		const diffMs = end.getTime() - start.getTime()
-		const diffDays = diffMs / (1000 * 60 * 60 * 24)
-		if (diffDays > 7) {
-			return t("validation.maxDuration")
-		}
+		if (diffMs > 7 * 24 * 60 * 60 * 1000) return "Duration too long"
 
-		// Validate recurrence
-		if (formData.isRepeating) {
-			if (!formData.recurrenceType) {
-				return t("validation.invalidRecurrence")
+		if (data.isRepeating) {
+			if (!data.recurrenceType) return "Select recurrence type"
+			if (data.recurrenceType === "weekly" && data.repeatDays.length === 0) {
+				return "Select at least one day"
 			}
-			if (formData.recurrenceType === "weekly" && formData.repeatDays.length === 0) {
-				return t("validation.invalidRecurrence")
-			}
-		}
-
-		// Validate recurrence until date if set
-		if (formData.isRepeating && formData.recurrenceUntil) {
-			const untilDate = new Date(`${formData.recurrenceUntil}T00:00:00`)
-			const startDate = new Date(formData.date)
-			if (untilDate <= startDate) {
-				return t("validation.invalidDate")
+			if (data.recurrenceUntil) {
+				if (data.recurrenceUntil <= data.date) return "Until date must be in future"
 			}
 		}
 
 		return null
 	}
 
-	const buildRecurrenceRule = (): RecurrenceRule | null => {
-		if (!formData.isRepeating || !formData.recurrenceType) {
-			return null
-		}
+	const buildRecurrenceRule = (data: FormData): RecurrenceRule | null => {
+		if (!data.isRepeating || !data.recurrenceType) return null
 
 		const rule: RecurrenceRule = {
-			type: formData.recurrenceType,
+			type: data.recurrenceType,
 			daysOfWeek: [],
 		}
 
-		if (formData.recurrenceType === "daily") {
+		if (data.recurrenceType === "daily") {
 			rule.daysOfWeek = [1, 2, 3, 4, 5, 6, 7]
-		} else if (formData.recurrenceType === "weekly") {
-			rule.daysOfWeek = formData.repeatDays.length > 0 ? formData.repeatDays : []
-		} else if (formData.recurrenceType === "monthly") {
-			// For monthly, use day of week from selected date
-			const date = new Date(formData.date)
+		} else if (data.recurrenceType === "weekly") {
+			rule.daysOfWeek = data.repeatDays
+		} else if (data.recurrenceType === "monthly") {
+			const date = new Date(data.date)
 			const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay()
 			rule.daysOfWeek = [dayOfWeek]
-			// Set day of month
 			rule.dayOfMonth = date.getDate()
 		}
 
-		// Set until date if provided
-		if (formData.recurrenceUntil) {
-			const untilDate = new Date(formData.recurrenceUntil)
+		if (data.recurrenceUntil) {
+			const untilDate = new Date(data.recurrenceUntil)
 			untilDate.setHours(23, 59, 59, 999)
 			rule.until = untilDate.toISOString()
 		}
@@ -182,353 +187,245 @@ export default function IntervalsForm() {
 		return rule
 	}
 
-	const handleSubmit = useCallback(async (e: React.FormEvent) => {
-		e.preventDefault()
-		setError(null)
-		setSuccess(false)
+	const resetForm = () => {
+		setFormData(prev => ({
+			...prev,
+			category: "other",
+			description: "",
+			isRepeating: false,
+			recurrenceType: null,
+			repeatDays: [],
+			recurrenceUntil: "",
+			startTime: "",
+			endTime: "",
+		}))
+		setHasUserEditedTimes(false)
+	}
 
-		// Validate form
-		const validationError = validateForm()
+	const handleAddDraft = (e: React.MouseEvent) => {
+		e.preventDefault()
+		const validationError = validateForm(formData)
 		if (validationError) {
 			setError(validationError)
 			return
 		}
 
+		setDrafts(prev => [...prev, formData])
+		resetForm()
+	}
+
+	const removeDraft = (index: number) => {
+		setDrafts(prev => prev.filter((_, i) => i !== index))
+	}
+
+	const handleSaveAll = async () => {
+		setError(null)
+		setSuccess(false)
+
 		if (!user) {
-			setError(t("errors.UNAUTHORIZED"))
+			setError("Unauthorized")
 			return
 		}
 
+		const itemsToSave = drafts.length > 0 ? drafts : [formData]
+
+		// Validate all if saving drafts, or single if saving form direct
+		if (drafts.length === 0) {
+			const err = validateForm(formData)
+			if (err) {
+				setError(err)
+				return
+			}
+		}
+
 		try {
-			// Convert local time to UTC
 			const userTimezone = user.timezone || "UTC"
-			const startTs = localToUTC(formData.startTime, formData.date, userTimezone)
-			const endTs = localToUTC(formData.endTime, formData.date, userTimezone)
-			
-			// Handle end time on next day
-			if (formData.endTime <= formData.startTime) {
-				endTs.setDate(endTs.getDate() + 1)
+
+			// Process sequentially to ensure order/consistency
+			for (const item of itemsToSave) {
+				const startTs = localToUTC(item.startTime, item.date, userTimezone)
+				const endTs = localToUTC(item.endTime, item.date, userTimezone)
+
+				if (item.endTime <= item.startTime) {
+					endTs.setDate(endTs.getDate() + 1)
+				}
+
+				const input: CreateIntervalInput = {
+					start_ts: startTs.toISOString(),
+					end_ts: endTs.toISOString(),
+					category: item.category,
+					description: item.description || null,
+					recurrence_rule: buildRecurrenceRule(item),
+				}
+
+				await create(input)
 			}
 
-			// Build input
-			const input: CreateIntervalInput = {
-				start_ts: startTs.toISOString(),
-				end_ts: endTs.toISOString(),
-				category: formData.category,
-				description: formData.description || null,
-				recurrence_rule: buildRecurrenceRule(),
-			}
-
-			// Create interval
-			await create(input)
-			
-			// Reset form
-			setFormData({
-				date: selectedDate || new Date().toISOString().split("T")[0],
-				startTime: "09:00",
-				endTime: "17:00",
-				category: "other",
-				description: "",
-				isRepeating: false,
-				recurrenceType: null,
-				repeatDays: [],
-				recurrenceUntil: "",
-			})
-
-			// Show success
+			setDrafts([])
+			resetForm()
 			setSuccess(true)
 			setTimeout(() => setSuccess(false), 3000)
-
-			// Refetch intervals to update list
 			refetch()
 		} catch (err) {
 			const errorMessage = err instanceof Error ? err.message : String(err)
 			setError(errorMessage)
 		}
-	}, [formData, user, selectedDate, create, refetch, t])
+	}
 
 	return (
-		<section className="w-full flex flex-col gap-0 border-b border-border md:border-b-0 bg-background md:bg-transparent">
-			{/* Collapsible Header */}
+		<section className="w-full flex flex-col bg-background/50 md:bg-transparent border-b border-border md:border-b-0 space-y-4">
+			{/* Header */}
 			<header
-				className="flex items-center justify-between py-3 md:pt-0 pt-3 md:cursor-default cursor-pointer hover:opacity-70 md:hover:opacity-100 transition-opacity"
+				className="flex items-center justify-between py-2 md:pt-0 pt-2 md:cursor-default cursor-pointer group px-4 md:px-0"
 				onClick={() => setIsOpen(!isOpen)}
 			>
-				<h2 className="text-lg font-medium tracking-tight text-foreground">
-					{t("form.title")}
+				<h2 className="text-xs font-semibold tracking-tight uppercase text-foreground/80 group-hover:text-foreground transition-colors">
+					Add Interval
 				</h2>
 				<button
 					type="button"
-					className="md:hidden text-muted-foreground hover:text-foreground hover:bg-transparent rounded-none h-8 w-8 cursor-pointer flex items-center justify-center"
+					className="md:hidden text-muted-foreground hover:text-foreground p-1"
 				>
-					{isOpen ? (
-						<ChevronUpIcon className="w-4 h-4" />
-					) : (
-						<ChevronDownIcon className="w-4 h-4" />
-					)}
+					{isOpen ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
 				</button>
 			</header>
 
 			{/* Form Content */}
-			<div className={`${isOpen ? "block" : "hidden"} md:block`}>
-				<form onSubmit={handleSubmit} className="flex flex-col gap-4 pb-6 md:pb-0">
+			<div className={cn(
+				"md:block overflow-hidden transition-all duration-300 ease-in-out px-4 md:px-0",
+				isOpen ? "max-h-[2000px] opacity-100 pb-4" : "max-h-0 opacity-0 md:max-h-none md:opacity-100 md:pb-0"
+			)}>
+				<div className="flex flex-col gap-3">
 					{error && (
-						<ErrorAlert error={error} onDismiss={() => setError(null)} />
+						<div className="bg-destructive/10 text-destructive text-[10px] p-2 border border-destructive/20">
+							{error}
+						</div>
 					)}
 
 					{success && (
-						<SuccessAlert
-							message={t("common.success")}
-							onDismiss={() => setSuccess(false)}
-						/>
-					)}
-
-					{/* Date */}
-					<div className="flex flex-col gap-1">
-						<label htmlFor="date" className="text-muted-foreground text-xs font-medium uppercase">
-							{t("common.date")}
-						</label>
-						<input
-							id="date"
-							type="date"
-							value={formData.date}
-							onChange={(e) => handleChange("date", e.target.value)}
-							className="w-full bg-transparent border-border rounded-none h-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-							required
-						/>
-					</div>
-
-					{/* Start Time */}
-					<div className="flex flex-col gap-1">
-						<label htmlFor="startTime" className="text-muted-foreground text-xs font-medium uppercase">
-							{t("intervals.create.start")}
-						</label>
-						<input
-							id="startTime"
-							type="time"
-							value={formData.startTime}
-							onChange={(e) => handleChange("startTime", e.target.value)}
-							className="w-full bg-transparent border-border rounded-none h-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-							required
-						/>
-					</div>
-
-					{/* End Time */}
-					<div className="flex flex-col gap-1">
-						<label htmlFor="endTime" className="text-muted-foreground text-xs font-medium uppercase">
-							{t("intervals.create.end")}
-						</label>
-						<input
-							id="endTime"
-							type="time"
-							value={formData.endTime}
-							onChange={(e) => handleChange("endTime", e.target.value)}
-							className="w-full bg-transparent border-border rounded-none h-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-							required
-						/>
-					</div>
-
-					{/* Separator */}
-					<div className="border-t border-border" />
-
-					{/* Category Selector */}
-					<div className="flex flex-col gap-1">
-						<label className="text-muted-foreground text-xs font-medium uppercase">
-							{t("intervals.create.category")}
-						</label>
-						<div className="flex gap-2 border border-border rounded-none p-0.5">
-							<button
-								type="button"
-								onClick={() => handleChange("category", "other")}
-								className={`flex-1 gap-2 rounded-none border-none shadow-none h-9 text-sm flex items-center justify-center transition-colors ${
-									formData.category === "other"
-										? "bg-secondary text-secondary-foreground"
-										: "bg-transparent hover:bg-muted"
-								}`}
-							>
-								<CalendarIcon className="w-3.5 h-3.5" />
-								{t("intervals.categories.other")}
-							</button>
-							<button
-								type="button"
-								onClick={() => handleChange("category", "busy")}
-								className={`flex-1 gap-2 rounded-none border-none shadow-none h-9 text-sm flex items-center justify-center transition-colors ${
-									formData.category === "busy"
-										? "bg-secondary text-secondary-foreground"
-										: "bg-transparent hover:bg-muted"
-								}`}
-							>
-								<ClockIcon className="w-3.5 h-3.5" />
-								{t("intervals.categories.busy")}
-							</button>
-							<button
-								type="button"
-								onClick={() => handleChange("category", "sleep")}
-								className={`flex-1 gap-2 rounded-none border-none shadow-none h-9 text-sm flex items-center justify-center transition-colors ${
-									formData.category === "sleep"
-										? "bg-secondary text-secondary-foreground"
-										: "bg-transparent hover:bg-muted"
-								}`}
-							>
-								<MoonIcon className="w-3.5 h-3.5" />
-								{t("intervals.categories.sleep")}
-							</button>
-						</div>
-					</div>
-
-					{/* Description - only for "other" category */}
-					{formData.category === "other" && (
-						<div className="flex flex-col gap-1">
-							<label htmlFor="description" className="text-muted-foreground text-xs font-medium uppercase">
-								{t("intervals.create.description")}
-							</label>
-							<input
-								id="description"
-								type="text"
-								value={formData.description}
-								onChange={(e) => handleChange("description", e.target.value)}
-								placeholder={t("intervals.create.description")}
-								className="w-full bg-transparent border-border rounded-none h-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-							/>
+						<div className="bg-emerald-500/10 text-emerald-500 text-[10px] p-2 border border-emerald-500/20 flex items-center gap-2">
+							<CheckIcon className="w-3 h-3" /> Intervals saved
 						</div>
 					)}
 
-					{/* Separator */}
-					<div className="border-t border-border" />
+					{/* Drafts List */}
+					{drafts.length > 0 && (
+						<div className="flex flex-col gap-1 mb-1 p-2 bg-muted/20 rounded-md border border-border/50">
+							<div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Review List ({drafts.length})</div>
+							{drafts.map((draft, idx) => (
+								<div key={idx} className="flex items-center justify-between text-xs p-1.5 bg-background border border-border rounded-sm">
+									<div className="flex flex-col leading-tight">
+										<span className="font-medium">{draft.startTime} - {draft.endTime}</span>
+										<span className="text-[10px] text-muted-foreground flex items-center gap-1.5 capitalize">
+											<span className={cn(
+												"w-1.5 h-1.5 rounded-full",
+												draft.category === 'busy' && "bg-zinc-500",
+												draft.category === 'sleep' && "bg-purple-500",
+												draft.category === 'other' && "bg-zinc-700"
+											)} />
+											{draft.category} {draft.isRepeating && "(Recurring)"}
+										</span>
+									</div>
+									<button
+										onClick={() => removeDraft(idx)}
+										className="text-muted-foreground hover:text-destructive p-1"
+									>
+										<Trash2Icon className="w-3 h-3" />
+									</button>
+								</div>
+							))}
+						</div>
+					)}
 
-					{/* Recurrence Section */}
-					<div className="flex flex-col gap-0 pt-1">
+					<div className="flex flex-col gap-3">
+						<TimeInputs
+							startTime={formData.startTime}
+							endTime={formData.endTime}
+							date={formData.date}
+							onStartTimeChange={(v) => handleTimeChange("startTime", v)}
+							onEndTimeChange={(v) => handleTimeChange("endTime", v)}
+							onDateChange={handleDateChange} // New
+							disabled={isSaving || !user}
+							existingIntervals={intervals || []}
+							onValidationChange={setIsValid}
+						/>
+
+						<CategorySelector
+							selectedCategory={formData.category}
+							onCategoryChange={(c) => handleChange("category", c)}
+							disabled={isSaving || !user}
+						/>
+
+						{formData.category === "other" && (
+							<div className="flex flex-col gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
+								<input
+									id="description"
+									type="text"
+									value={formData.description}
+									onChange={(e) => handleChange("description", e.target.value)}
+									placeholder="Add description..."
+									className="w-full bg-background/50 border border-input rounded-md h-8 px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring transition-all"
+								/>
+							</div>
+						)}
+
+						<RecurrenceSection
+							isRepeating={formData.isRepeating}
+							recurrenceType={formData.recurrenceType}
+							repeatDays={formData.repeatDays}
+							recurrenceUntil={formData.recurrenceUntil}
+							date={formData.date}
+							onRepeatingChange={(v) => handleChange("isRepeating", v)}
+							onRecurrenceTypeChange={handleRecurrenceTypeChange}
+							onRepeatDaysChange={(v) => handleChange("repeatDays", v)}
+							onRecurrenceUntilChange={(v) => handleChange("recurrenceUntil", v)}
+							disabled={isSaving || !user}
+						/>
+					</div>
+
+					{/* Actions */}
+					<div className="flex flex-col gap-1.5 pt-1">
+						{/* Add to List Button */}
 						<button
 							type="button"
-							onClick={() => handleChange("isRepeating", !formData.isRepeating)}
-							className="flex items-center justify-between py-2 cursor-pointer hover:opacity-70 transition-opacity"
+							onClick={handleAddDraft}
+							disabled={isSaving || !user || !isValid}
+							className="w-full h-8 text-xs font-medium uppercase tracking-wide bg-muted hover:bg-muted/80 text-foreground flex items-center justify-center gap-2 transition-all rounded-sm"
 						>
-							<label className="cursor-pointer text-muted-foreground text-xs font-medium uppercase pointer-events-none">
-								{t("intervals.create.recurrence")}
-							</label>
-							{formData.isRepeating ? (
-								<ChevronUpIcon className="w-4 h-4 text-muted-foreground" />
-							) : (
-								<ChevronDownIcon className="w-4 h-4 text-muted-foreground" />
-							)}
+							<PlusIcon className="w-3 h-3" />
+							<span>Add to List</span>
 						</button>
 
-						{/* Recurrence Content */}
-						<div
-							className={`overflow-hidden transition-all duration-200 ease-in-out ${
-								formData.isRepeating ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-							}`}
+						{/* Confirm / Save Button */}
+						<button
+							type="button"
+							onClick={handleSaveAll}
+							disabled={isSaving || !user || (drafts.length === 0 && !isValid)}
+							className={cn(
+								"w-full h-8 text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all rounded-sm shadow-sm",
+								drafts.length > 0
+									? "bg-primary text-primary-foreground hover:bg-primary/90" // Primary action if drafts exist
+									: "bg-background border border-primary/20 text-muted-foreground hover:text-foreground hover:border-primary/50" // Subtler if empty
+							)}
 						>
-							<div className="flex flex-col gap-2 pt-1 pb-2">
-								{/* Quick Selection Presets */}
-								<div className="flex gap-2">
-									<button
-										type="button"
-										onClick={() => handlePresetClick("daily")}
-										className={`flex-1 h-7 text-xs rounded-none border border-border transition-colors ${
-											formData.recurrenceType === "daily"
-												? "bg-secondary text-secondary-foreground"
-												: "bg-transparent hover:bg-muted"
-										}`}
-									>
-										{t("intervals.recurrence.daily")}
-									</button>
-									<button
-										type="button"
-										onClick={() => handlePresetClick("weekly")}
-										className={`flex-1 h-7 text-xs rounded-none border border-border transition-colors ${
-											formData.recurrenceType === "weekly"
-												? "bg-secondary text-secondary-foreground"
-												: "bg-transparent hover:bg-muted"
-										}`}
-									>
-										{t("intervals.recurrence.weekly")}
-									</button>
-									<button
-										type="button"
-										onClick={() => handlePresetClick("monthly")}
-										className={`flex-1 h-7 text-xs rounded-none border border-border transition-colors ${
-											formData.recurrenceType === "monthly"
-												? "bg-secondary text-secondary-foreground"
-												: "bg-transparent hover:bg-muted"
-										}`}
-									>
-										{t("intervals.recurrence.monthly")}
-									</button>
-								</div>
-
-								{/* Day Selection Toggle Group - only for weekly */}
-								{formData.recurrenceType === "weekly" && (
-									<div className="flex gap-px bg-border border border-border">
-										{DAY_IDS.map((day, i) => (
-											<button
-												key={day}
-												type="button"
-												onClick={() => {
-													const newDays = formData.repeatDays.includes(day)
-														? formData.repeatDays.filter((d) => d !== day)
-														: [...formData.repeatDays, day]
-													handleRepeatDaysChange(newDays)
-												}}
-												className={`flex-1 h-8 rounded-none text-xs transition-colors ${
-													formData.repeatDays.includes(day)
-														? "bg-foreground text-background"
-														: "bg-background text-muted-foreground hover:bg-muted"
-												}`}
-											>
-												{DAY_LABELS[i]}
-											</button>
-										))}
-									</div>
-								)}
-
-								{/* Info for monthly */}
-								{formData.recurrenceType === "monthly" && (
-									<div className="text-xs text-muted-foreground p-2 bg-muted rounded-none">
-										{t("intervals.recurrence.monthly")}: {new Date(formData.date).getDate()} {t("intervals.recurrence.ofEachMonth") || "di ogni mese"}
-									</div>
-								)}
-
-								{/* Recurrence Until */}
-								<div className="flex flex-col gap-1">
-									<label htmlFor="recurrenceUntil" className="text-muted-foreground text-xs font-medium uppercase">
-										{t("intervals.recurrence.until")} <span className="normal-case">({t("common.optional")})</span>
-									</label>
-									<input
-										id="recurrenceUntil"
-										type="date"
-										value={formData.recurrenceUntil}
-										onChange={(e) => handleChange("recurrenceUntil", e.target.value)}
-										min={formData.date}
-										className="w-full bg-transparent border-border rounded-none h-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-									/>
-								</div>
-							</div>
-						</div>
+							{isSaving ? (
+								<>
+									<Loader2Icon className="w-3 h-3 animate-spin" />
+									<span>Saving...</span>
+								</>
+							) : (
+								<>
+									<SaveIcon className="w-3 h-3" />
+									<span>{drafts.length > 0 ? `Confirm All (${drafts.length})` : "Confirm & Save"}</span>
+								</>
+							)}
+						</button>
 					</div>
 
-					{/* Submit Button */}
-					<button
-						type="submit"
-						disabled={isSaving || !user}
-						className="w-full cursor-pointer font-medium tracking-wide h-10 rounded-none text-sm mt-1 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-					>
-						{isSaving ? (
-							<>
-								<Loading size="sm" />
-								{t("common.loading")}
-							</>
-						) : (
-							t("form.submit")
-						)}
-					</button>
-
 					{!user && (
-						<div className="bg-muted border border-border p-3 rounded-none text-sm text-muted-foreground">
-							{t("errors.UNAUTHORIZED")}
-						</div>
+						<p className="text-[10px] text-muted-foreground text-center">Login required</p>
 					)}
-				</form>
+				</div>
 			</div>
 		</section>
 	)

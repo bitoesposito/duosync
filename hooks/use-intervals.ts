@@ -15,6 +15,7 @@ import {
 	type CreateIntervalInput,
 	type UpdateIntervalInput,
 } from "@/store/api/intervalsApi"
+import { timelineApi } from "@/store/api/timelineApi"
 import { setSelectedDate } from "@/store/slices/intervalsSlice"
 import type { Interval } from "@/types"
 
@@ -52,24 +53,30 @@ export function useIntervals(date?: string) {
 	const create = useCallback(
 		async (input: CreateIntervalInput): Promise<Interval> => {
 			const result = await createIntervalMutation(input).unwrap()
+			// Invalidate timeline triggers a refetch of availability grid
+			dispatch(timelineApi.util.invalidateTags(["Timeline"]))
 			return result
 		},
-		[createIntervalMutation]
+		[createIntervalMutation, dispatch]
 	)
 
 	const update = useCallback(
 		async (id: number, input: UpdateIntervalInput): Promise<Interval> => {
 			const result = await updateIntervalMutation({ id, data: input }).unwrap()
+			// Invalidate timeline triggers a refetch of availability grid
+			dispatch(timelineApi.util.invalidateTags(["Timeline"]))
 			return result
 		},
-		[updateIntervalMutation]
+		[updateIntervalMutation, dispatch]
 	)
 
 	const remove = useCallback(
 		async (id: number): Promise<void> => {
 			await deleteIntervalMutation(id).unwrap()
+			// Invalidate timeline triggers a refetch of availability grid
+			dispatch(timelineApi.util.invalidateTags(["Timeline"]))
 		},
-		[deleteIntervalMutation]
+		[deleteIntervalMutation, dispatch]
 	)
 
 	return {
@@ -90,4 +97,3 @@ export function useIntervals(date?: string) {
 		refetch,
 	}
 }
-

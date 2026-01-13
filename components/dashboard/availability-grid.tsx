@@ -1,14 +1,8 @@
 /**
  * Availability Grid Component
  * 
- * Displays personal and shared availability timelines.
- * Receives pre-calculated segments from API instead of calculating them.
- * 
- * Changes from old version:
- * - Receives segments from useTimeline() hook (Redux)
- * - No local calculation (backend is source of truth)
- * - Supports multi-user connections
- * - Timezone-aware (segments already converted)
+ * Displays personal and shared availability timelines with a specific "raw/premium" aesthetic.
+ * Matches design reference: Dark theme, solid vibrant bars, minimal layout.
  */
 "use client"
 
@@ -17,156 +11,140 @@ import { SparklesIcon, UserIcon } from "lucide-react"
 import { useI18n } from "@/hooks/use-i18n"
 import { useTimeline } from "@/hooks/use-timeline"
 import { useConnections } from "@/hooks/use-connections"
-import { TimelineSegmentCategory, TimelineSegment } from "@/types"
+import { TimelineSegmentCategory, TimelineSegment as TimelineSegmentType } from "@/types"
+import { TimelineBar } from "./timeline/timeline-bar"
+import { TimelineSegment } from "./timeline/timeline-segment"
 
-// Color mappings for personal timeline
-const personalColorMap: Record<TimelineSegmentCategory, string> = {
-	match: "bg-emerald-500 dark:bg-emerald-600",
-	available: "bg-emerald-500 dark:bg-emerald-600",
-	sleep: "bg-indigo-500 dark:bg-indigo-500",
-	busy: "bg-slate-500 dark:bg-slate-500",
-	other: "bg-slate-500 dark:bg-slate-500",
-}
-
-// Color mappings for shared timeline (only match segments are visible)
-const sharedColorMap: Record<TimelineSegmentCategory, string> = {
-	match: "bg-emerald-500 dark:bg-emerald-600",
-	available: "bg-transparent",
-	sleep: "bg-transparent",
-	busy: "bg-transparent",
-	other: "bg-transparent",
-}
-
-/**
- * Availability grid component that displays personal and shared timelines.
- * 
- * Features:
- * - Personal timeline: Shows user's own availability
- * - Shared timeline: Shows overlapping availability with connected users
- * - Receives pre-calculated segments from API
- * - Timezone-aware display
- * 
- * State management:
- * - Timeline segments: Fetched via useTimeline() hook
- * - Connections: Fetched via useConnections() hook
- * - Current date: Managed via date picker (future)
- */
-export default function AvailabilityGrid() {
+export default function AvailabilityGrid() { // Default export as requested
 	const { t } = useI18n()
 	const { personalSegments, sharedSegments, isLoading } = useTimeline()
 	const { accepted, isLoading: isLoadingConnections } = useConnections()
-	
+
 	const hasConnections = accepted.length > 0
 	const isLoadingGrid = isLoading || isLoadingConnections
 
-	// Filter shared segments to only show "match" (overlapping availability)
-	// Note: sharedSegments already contains only "match" segments from useTimeline,
-	// but we filter again for safety
 	const matchSegments = useMemo(
-		() => sharedSegments.filter((segment: TimelineSegment) => segment.category === "match"),
+		() => sharedSegments.filter((segment: TimelineSegmentType) => segment.category === "match"),
 		[sharedSegments]
 	)
 
-	const legendItems: { category: TimelineSegmentCategory; label: string }[] = [
-		{ category: "available", label: t("availability.legendAvailable") },
-		{ category: "busy", label: t("availability.legendBusy") },
-		{ category: "sleep", label: t("availability.legendSleep") },
-	]
-
-	const getCategoryLabel = (category: TimelineSegmentCategory): string => {
-		if (category === "available" || category === "match") return t("availability.legendAvailable")
-		if (category === "sleep") return t("availability.legendSleep")
-		return t("availability.legendBusy")
-	}
-
-	// TODO: Implement TimelineBar component (for now, simple placeholder)
 	return (
-		<section className="w-full flex flex-col gap-6 border-b border-border pb-6">
-			<div className="flex items-center justify-between mb-4">
-				<h3 className="text-lg font-semibold">{t("availability.title")}</h3>
-				<div className="flex gap-4 text-xs">
-					{legendItems.map((item) => (
-						<div key={item.category} className="flex items-center gap-1">
-							<div className={`w-3 h-3 rounded ${personalColorMap[item.category]}`} />
-							<span>{item.label}</span>
-						</div>
-					))}
+		<section className="w-full flex flex-col gap-6">
+			{/* Header / Legend */}
+			<div className="flex items-center justify-between mb-2">
+				<h3 className="text-xl font-semibold tracking-tight text-foreground">Disponibilità</h3>
+				<div className="flex gap-4 text-xs font-medium">
+					<div className="flex items-center gap-1.5">
+						<div className="w-3 h-3 bg-[#10b981] rounded-sm" />
+						<span className="text-muted-foreground">Disponibile</span>
+					</div>
+					<div className="flex items-center gap-1.5">
+						<div className="w-3 h-3 bg-zinc-700 rounded-sm" />
+						<span className="text-muted-foreground">Occupato</span>
+					</div>
+					<div className="flex items-center gap-1.5">
+						<div className="w-3 h-3 bg-[#8b5cf6] rounded-sm" />
+						<span className="text-muted-foreground">Sonno</span>
+					</div>
 				</div>
 			</div>
 
-			<div
-				className={`relative w-full flex flex-col gap-4 ${
-					isLoadingGrid ? "opacity-40 pointer-events-none" : ""
-				}`}
-			>
+			<div className={`relative w-full flex flex-col gap-8 transition-opacity duration-300 ${isLoadingGrid ? "opacity-50 pointer-events-none" : "opacity-100"}`}>
 				{/* Personal timeline */}
-				<div className="flex flex-col gap-2">
+				<div className="flex flex-col gap-3">
 					<div className="flex items-center gap-2">
 						<UserIcon className="w-4 h-4 text-muted-foreground" />
-						<p className="text-sm font-medium text-foreground">
-							{t("availability.personalTimeline")}
+						<p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+							La tua disponibilità
 						</p>
 					</div>
-					<div className="h-14 bg-muted/5 rounded border-2 border-border p-2">
-						{personalSegments.length === 0 ? (
-							<p className="text-xs text-muted-foreground text-center py-4">
-								{t("availability.noData")}
-							</p>
+
+					<TimelineBar>
+						{personalSegments.length > 0 ? (
+							personalSegments.map((segment, idx) => (
+								<TimelineSegment
+									key={idx}
+									start={segment.start}
+									end={segment.end}
+									category={segment.category}
+								/>
+							))
 						) : (
-							<div className="flex h-full gap-1">
-								{personalSegments.map((segment, idx) => (
-									<div
-										key={idx}
-										className={`${personalColorMap[segment.category]} rounded`}
-										style={{
-											width: `${(parseFloat(segment.end) - parseFloat(segment.start)) / 24 * 100}%`,
-											marginLeft: `${parseFloat(segment.start) / 24 * 100}%`,
-										}}
-										title={`${getCategoryLabel(segment.category)}: ${segment.start} - ${segment.end}`}
-									/>
-								))}
+							// Empty state (full available if no busy/sleep set? Or empty? Assuming empty = available is standard for calendar apps, but here we explicitly show segments. 
+							// If no segments, maybe show "No data" or full grey? Let's assume empty for now)
+							<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground/30 font-medium">
+								Nessun dato inserito
 							</div>
 						)}
-					</div>
+					</TimelineBar>
 				</div>
 
-				{/* Shared timeline (only shown if user has connections) */}
+				{/* Shared timeline */}
 				{hasConnections && (
-					<div className="flex flex-col gap-2">
-						<div className="flex items-center gap-2">
-							<SparklesIcon className="w-4 h-4 text-emerald-500" />
-							<p className="text-sm font-medium text-foreground">
-								{t("availability.sharedTimeline")}
-							</p>
+					<div className="flex flex-col gap-3">
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-2">
+								<SparklesIcon className="w-4 h-4 text-[#10b981]" />
+								<p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+									Tempo disponibile condiviso
+								</p>
+							</div>
 							{matchSegments.length > 0 && (
-								<span className="ml-auto text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full">
-									{matchSegments.length} {t("availability.freeSlots")}
+								<span className="text-xs font-bold text-[#10b981]">
+									{matchSegments.length} slot
 								</span>
 							)}
 						</div>
-						<div className="h-7 bg-emerald-50/30 dark:bg-emerald-950/20 rounded border border-emerald-200 dark:border-emerald-900 p-1">
-							{matchSegments.length === 0 ? (
-								<p className="text-xs text-muted-foreground text-center py-1">
-									{t("availability.noFreeTime")}
-								</p>
+
+						<TimelineBar className="border-[#10b981]/20 bg-[#10b981]/5">
+							{matchSegments.length > 0 ? (
+								matchSegments.map((segment, idx) => (
+									<TimelineSegment
+										key={idx}
+										start={segment.start}
+										end={segment.end}
+										category="match" // Force match color (green)
+									/>
+								))
 							) : (
-								<div className="flex h-full gap-1">
-									{matchSegments.map((segment, idx) => (
-										<div
-											key={idx}
-											className={`${sharedColorMap[segment.category]} rounded`}
-											style={{
-												width: `${(parseFloat(segment.end) - parseFloat(segment.start)) / 24 * 100}%`,
-												marginLeft: `${parseFloat(segment.start) / 24 * 100}%`,
-											}}
-											title={`${t("availability.legendAvailable")}: ${segment.start} - ${segment.end}`}
-										/>
-									))}
+								<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground/30 font-medium">
+									Nessuna sovrapposizione trovata
 								</div>
 							)}
-						</div>
+						</TimelineBar>
 					</div>
 				)}
+			</div>
+
+			{/* List View Placeholder (as seen in design) */}
+			<div className="pt-4 border-t border-zinc-800">
+				<div className="flex items-center justify-between mb-4">
+					<div className="flex items-center gap-2">
+						<span className="block w-4 h-4 rounded-full border-2 border-muted-foreground/30"></span>
+						<h4 className="text-lg font-medium">Lista impegni</h4>
+					</div>
+					<button className="bg-white text-black text-xs font-bold px-3 py-1.5 rounded-sm flex items-center gap-1 hover:bg-white/90 transition-colors">
+						<span className="text-lg leading-none mb-0.5">✓</span>
+						Conferma
+					</button>
+				</div>
+
+				<div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 pl-1">
+					Sonno
+				</div>
+
+				{/* List Items Placeholder - rendering current sleep segments */}
+				<div className="flex flex-col gap-2">
+					{personalSegments.filter(s => s.category === "sleep").map((s, i) => (
+						<div key={i} className="border border-zinc-800 bg-zinc-900/50 p-3 flex items-center gap-3 rounded-sm border-l-2 border-l-[#8b5cf6]">
+							<code className="text-[#8b5cf6] font-mono font-bold text-sm">{s.start} - {s.end}</code>
+							<span className="bg-[#8b5cf6]/20 text-[#8b5cf6] text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wide">SONNO</span>
+						</div>
+					))}
+					{personalSegments.filter(s => s.category === "sleep").length === 0 && (
+						<div className="text-sm text-muted-foreground/50 italic py-2 pl-1">Nessun orario di sonno impostato</div>
+					)}
+				</div>
 			</div>
 		</section>
 	)

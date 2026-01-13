@@ -6,13 +6,11 @@
 
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
 
+import type { User } from "@/types"
+
 export interface AuthCheckResponse {
 	authenticated: boolean
-	user?: {
-		id: number
-		name: string
-		email: string | null
-	}
+	user?: User
 	hasPasskeys?: boolean
 	error?: string
 	code?: string
