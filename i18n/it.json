@@ -18,7 +18,9 @@
 		"select": "Seleziona",
 		"all": "Tutti",
 		"none": "Nessuno",
-		"tip": "Suggerimento"
+		"tip": "Suggerimento",
+		"optional": "opzionale",
+		"date": "Data"
 	},
 	"errors": {
 		"INTERVAL_INVALID": "L'intervallo specificato non è valido",

@@ -18,7 +18,9 @@
 		"select": "Select",
 		"all": "All",
 		"none": "None",
-		"tip": "Tip"
+		"tip": "Tip",
+		"optional": "optional",
+		"date": "Date"
 	},
 	"errors": {
 		"INTERVAL_INVALID": "The specified interval is invalid",
@@ -148,7 +150,10 @@
 			"userId": "User ID",
 			"features": "Features",
 			"featuresDescription": "Main features will be available here.",
-			"loading": "Loading..."
+			"loading": "Loading...",
+			"greeting": "Hello, {name}!",
+			"greetingFallback": "there",
+			"subtitle": "Manage your schedule and sync with friends"
 		}
 	},
 	"timeline": {
@@ -163,6 +168,22 @@
 		"sleep": "Sleep",
 		"busy": "Busy",
 		"other": "Other"
+	},
+	"availability": {
+		"title": "Availability",
+		"loading": "Loading availability...",
+		"personalTimeline": "Your availability",
+		"sharedTimeline": "Shared availability",
+		"legendAvailable": "Available",
+		"legendBusy": "Busy",
+		"legendSleep": "Sleep",
+		"freeSlots": "free slots",
+		"noFreeTime": "No free time available",
+		"noData": "No data available"
+	},
+	"form": {
+		"title": "Create Interval",
+		"submit": "Create"
 	},
 	"intervals": {
 		"title": "Intervals",

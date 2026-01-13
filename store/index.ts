@@ -7,40 +7,32 @@
 import { configureStore } from "@reduxjs/toolkit"
 import { setupListeners } from "@reduxjs/toolkit/query"
 import authSlice from "./slices/authSlice"
+import intervalsSlice from "./slices/intervalsSlice"
+import timelineSlice from "./slices/timelineSlice"
+import connectionsSlice from "./slices/connectionsSlice"
 import { authApi } from "./api/authApi"
-// Import slices and APIs as they are created
-// import { intervalsApi } from "./api/intervalsApi"
-// import { timelineApi } from "./api/timelineApi"
-// import { connectionsApi } from "./api/connectionsApi"
-// import intervalsSlice from "./slices/intervalsSlice"
-// import timelineSlice from "./slices/timelineSlice"
-// import connectionsSlice from "./slices/connectionsSlice"
-// import uiSlice from "./slices/uiSlice"
+import { intervalsApi } from "./api/intervalsApi"
+import { timelineApi } from "./api/timelineApi"
+import { connectionsApi } from "./api/connectionsApi"
 
 export const makeStore = () => {
 	return configureStore({
 		reducer: {
 			auth: authSlice,
+			intervals: intervalsSlice,
+			timeline: timelineSlice,
+			connections: connectionsSlice,
 			[authApi.reducerPath]: authApi.reducer,
-			// Add slices and APIs here as they are created
-			// intervals: intervalsSlice,
-			// timeline: timelineSlice,
-			// connections: connectionsSlice,
-			// ui: uiSlice,
-			// [intervalsApi.reducerPath]: intervalsApi.reducer,
-			// [timelineApi.reducerPath]: timelineApi.reducer,
-			// [connectionsApi.reducerPath]: connectionsApi.reducer,
+			[intervalsApi.reducerPath]: intervalsApi.reducer,
+			[timelineApi.reducerPath]: timelineApi.reducer,
+			[connectionsApi.reducerPath]: connectionsApi.reducer,
 		},
 		middleware: (getDefaultMiddleware) =>
 			getDefaultMiddleware()
 				.concat(authApi.middleware)
-				// Add RTK Query middleware here as APIs are created
-				// .concat(
-				// 	intervalsApi.middleware,
-				// 	timelineApi.middleware,
-				// 	connectionsApi.middleware
-				// )
-		,
+				.concat(intervalsApi.middleware)
+				.concat(timelineApi.middleware)
+				.concat(connectionsApi.middleware),
 	})
 }
 

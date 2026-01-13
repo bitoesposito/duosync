@@ -6,8 +6,9 @@
 
 export { useAuth } from "./use-auth"
 export { useI18n } from "./use-i18n"
-// Hooks will be exported here as they are implemented
-// Example:
-// export { useIntervals } from "./use-intervals"
-// export { useTimeline } from "./use-timeline"
-// export { useConnections } from "./use-connections"
+export { useIntervals } from "./use-intervals"
+export { useTimeline } from "./use-timeline"
+export { useConnections } from "./use-connections"
+export { usePasskeyRegistration } from "./use-passkey-registration"
+export { useRequireAuth } from "./use-require-auth"
+export { usePasskeyPrompt } from "./use-passkey-prompt"

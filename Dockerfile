@@ -5,17 +5,16 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-# Copy package files
+# Copy only package files for dependency installation
+# Source code will be mounted as volume in docker-compose.yml
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Copy application code
-COPY . .
-
 # Expose port 3000
 EXPOSE 3000
 
-# Run Next.js in development mode for hot reloading
+# Run Next.js in development mode
+# Source code is mounted from host via volume
 CMD ["pnpm", "run", "dev"]
