@@ -11,7 +11,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { UserIcon, GlobeIcon, LogOutIcon, ChevronDownIcon } from "lucide-react"
+import { UserIcon, GlobeIcon, LogOutIcon } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useI18n } from "@/hooks/use-i18n"
 import { Loading } from "@/components/ui"
