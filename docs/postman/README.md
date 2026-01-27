@@ -93,21 +93,6 @@ The collection includes pre-filled example requests:
 }
 ```
 
-### Create Monthly Recurring Interval
-```json
-{
-  "start_ts": "2024-01-15T10:00:00Z",
-  "end_ts": "2024-01-15T11:00:00Z",
-  "category": "busy",
-  "description": "Monthly review",
-  "recurrence_rule": {
-    "type": "monthly",
-    "daysOfWeek": [],
-    "dayOfMonth": 15,
-    "until": null
-  }
-}
-```
 
 ## Testing Workflow
 
@@ -148,5 +133,4 @@ Common error codes:
 - All timestamps must be in ISO 8601 format (UTC)
 - Date parameters must be in `YYYY-MM-DD` format
 - User IDs in `userIds` query parameter must be comma-separated
-- Recurrence rules support `daily`, `weekly`, and `monthly` types
-- Monthly recurrences require either `dayOfMonth` or `byWeekday` (not both)
+- Recurrence rules support `daily` and `weekly` types

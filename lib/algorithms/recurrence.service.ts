@@ -59,7 +59,6 @@ function resolveRecurrenceRule(
 	const frequencyMap: Record<string, Frequency> = {
 		daily: RRule.DAILY,
 		weekly: RRule.WEEKLY,
-		monthly: RRule.MONTHLY,
 	}
 
 	// Build RRule options
@@ -82,27 +81,6 @@ function resolveRecurrenceRule(
 			rruleOptions.byweekday = daysOfWeek
 		}
 		rruleOptions.freq = RRule.DAILY
-	} else if (rule.type === "monthly") {
-		// Monthly: combine dayOfMonth/byWeekday with daysOfWeek
-		if (rule.dayOfMonth !== undefined) {
-			if (rule.dayOfMonth === -1 || rule.dayOfMonth === "last") {
-				rruleOptions.bymonthday = [-1]
-			} else {
-				rruleOptions.bymonthday = [rule.dayOfMonth]
-			}
-			// Filter by weekday if specified
-			if (daysOfWeek.length > 0) {
-				rruleOptions.byweekday = daysOfWeek
-			}
-		} else if (rule.byWeekday) {
-			// Parse "first-monday", "last-friday", etc.
-			const [position, weekday] = parseByWeekday(rule.byWeekday)
-			rruleOptions.byweekday = [{ weekday, n: position }]
-			// If daysOfWeek specified, must match
-			if (daysOfWeek.length > 0 && daysOfWeek.includes(weekday)) {
-				rruleOptions.byweekday = [{ weekday, n: position }]
-			}
-		}
 	}
 
 	// Create RRule and generate occurrences
@@ -124,26 +102,3 @@ function resolveRecurrenceRule(
 	return occurrences
 }
 
-/**
- * Parse "first-monday", "last-friday", etc. into RRule format
- */
-function parseByWeekday(byWeekday: string): [number, number] {
-	const [position, weekday] = byWeekday.split("-")
-	const positionMap: Record<string, number> = {
-		first: 1,
-		second: 2,
-		third: 3,
-		fourth: 4,
-		last: -1,
-	}
-	const weekdayMap: Record<string, number> = {
-		monday: 0,
-		tuesday: 1,
-		wednesday: 2,
-		thursday: 3,
-		friday: 4,
-		saturday: 5,
-		sunday: 6,
-	}
-	return [positionMap[position.toLowerCase()], weekdayMap[weekday.toLowerCase()]]
-}

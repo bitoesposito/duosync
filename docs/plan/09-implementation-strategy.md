@@ -6,9 +6,9 @@
 
 **Riepilogo decisioni:**
 - Timezone: Multi-timezone (UTC calcoli, display locale) - Vedi `01-principles.md`
-- Intervalli > 24h: Max 7 giorni - Vedi `02-database-schema.md`
+- Intervalli: Max 24h - Vedi `02-database-schema.md`
 - Overlap utente: Permesso - Vedi `02-database-schema.md`
-- Recurrence Rules: Weekly + daily + monthly - Vedi `02-database-schema.md`
+- Recurrence Rules: Weekly + daily - Vedi `02-database-schema.md`
 - Cache TTL: 5 minuti - Vedi `05-state-management.md`
 - Token Strategy: UUID v4 nel DB - Vedi `06-authentication.md`
 - Connection Limits: 50 (solo `accepted`) - Vedi `07-connections.md`
@@ -58,8 +58,9 @@
 4. ✅ Test edge cases ricorrenze:
    - DST transitions
    - Leap years
-   - Ricorrenze oltre mezzanotte
+   - Ricorrenze oltre mezzanotte (max 24h)
    - "until" date validation
+   - Disattivazione giorni specifici tramite exceptions
 5. ✅ Benchmark con dataset realistici (100 utenti, 1000 intervalli)
 6. ✅ Profiling e ottimizzazione se necessario
 
@@ -184,8 +185,9 @@
 2. ✅ Creare script migrazione step-by-step con checkpoint:
    - Backup completo DB
    - Map `appointments` → `busy_intervals`
-   - Map `recurring_appointments` → `busy_intervals` con `recurrence_rule`
+   - Map `recurring_appointments` → `busy_intervals` con `recurrence_rule` (weekly/daily)
    - Calcolare `start_ts` base per ricorrenze
+   - Rimuovere intervalli > 24h
    - Valida integrità dati
 3. ✅ Testare su copia DB reale
 4. ✅ Validare dati migrati (conteggi, integrità foreign keys, test query)
@@ -203,9 +205,9 @@
 **Approccio:** Test completi (unit + integration + E2E) + coverage >80% core
 
 **Test Cases:**
-- Algoritmi: Merge, ricorrenze, complemento, timezone conversion
+- Algoritmi: Merge, ricorrenze (weekly/daily), complemento, timezone conversion
 - API: CRUD intervalli, timeline calculation, connections
-- E2E: Login → Crea intervallo → Vedi timeline → Modifica ricorrenza → Elimina intervallo
+- E2E: Login → Crea intervallo → Crea ricorrenza weekly/daily → Disattiva giorni specifici → Vedi timeline → Elimina intervallo
 
 **Coverage Target:**
 - >80% algoritmi core (merge, ricorrenze)

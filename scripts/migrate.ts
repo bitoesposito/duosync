@@ -20,8 +20,27 @@ async function runMigrations() {
 	const db = drizzle(pool)
 
 	try {
-		await migrate(db, { migrationsFolder: "./lib/db/migrations" })
-		console.log("✅ Migrations completed successfully!")
+		const migrationsFolder = "./lib/db/migrations"
+		// Check if migrations folder exists and has files
+		const fs = await import("fs/promises")
+		try {
+			const files = await fs.readdir(migrationsFolder)
+			const sqlFiles = files.filter((f) => f.endsWith(".sql"))
+			if (sqlFiles.length === 0) {
+				console.log("⚠️  No migration files found. Using drizzle-kit push instead...")
+				const { push } = await import("drizzle-orm/node-postgres/migrator")
+				await push(db, { migrationsFolder })
+				console.log("✅ Schema pushed successfully!")
+			} else {
+				await migrate(db, { migrationsFolder })
+				console.log("✅ Migrations completed successfully!")
+			}
+		} catch (dirError) {
+			console.log("⚠️  Migrations folder not found. Using drizzle-kit push instead...")
+			const { push } = await import("drizzle-orm/node-postgres/migrator")
+			await push(db, { migrationsFolder })
+			console.log("✅ Schema pushed successfully!")
+		}
 	} catch (error) {
 		console.error("❌ Migration failed:", error)
 		process.exit(1)

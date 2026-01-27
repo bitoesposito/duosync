@@ -14,7 +14,9 @@ GET /api/timeline?date=2025-03-10&userIds=1,2,3
 - `date`: YYYY-MM-DD format in UTC (required)
 - `userIds`: Comma-separated list of user IDs (required)
 
-**Nota:** `date` è sempre in UTC. Il backend converte i risultati al timezone dell'utente corrente (dal session).
+**Nota:** 
+- `date` è sempre in UTC e rappresenta il giorno per cui calcolare la timeline
+- Il backend converte i risultati al timezone dell'utente corrente (dal session)
 
 **Response (Payload Ideale):**
 
@@ -55,9 +57,9 @@ Standardizzati con error codes e messaggi sempre in inglese. Traduzione nel fron
 ```
 
 **Error Codes:**
-- `INTERVAL_INVALID` - Invalid interval
+- `INTERVAL_INVALID` - Invalid interval (es. > 24h, end <= start)
 - `CONNECTION_LIMIT_REACHED` - Connection limit reached (50)
-- `RECURRENCE_INVALID` - Invalid recurrence rule
+- `RECURRENCE_INVALID` - Invalid recurrence rule (solo weekly/daily supportati)
 - `UNAUTHORIZED` - Unauthorized
 - `TIMELINE_TIMEOUT` - Timeline calculation timeout
 - `NETWORK_ERROR` - Network error
@@ -105,6 +107,10 @@ Content-Type: application/json
 }
 ```
 
+**Nota:** 
+- `start_ts` e `end_ts` definiscono l'intervallo base
+- Se `recurrence_rule` è presente, l'intervallo si applica automaticamente ai giorni corrispondenti ai giorni selezionati
+
 **Response:**
 ```typescript
 {
@@ -125,7 +131,7 @@ Content-Type: application/json
 GET /api/intervals?date=2025-03-10
 ```
 
-**Response:** Array di intervalli per la data specificata (singoli + ricorrenze risolte).
+**Response:** Array di intervalli per la data specificata (singoli + ricorrenze risolte per quel giorno).
 
 ### Update
 
@@ -152,16 +158,15 @@ DELETE /api/intervals/:id
 ## Regole di Validazione
 
 - `start_ts` e `end_ts` sempre in `timestamptz` (ISO 8601)
-- Se `recurrence_rule` presente, `start_ts` e `end_ts` sono la base
+- Se `recurrence_rule` presente, `start_ts` e `end_ts` sono la base per la ricorrenza
 - Validazione: `end_ts > start_ts` (enforced by DB CHECK constraint)
-- Validazione: `end_ts - start_ts <= 7 days` (enforced by DB CHECK constraint)
+- Validazione: `end_ts - start_ts <= 24 hours` (enforced by DB CHECK constraint)
 - `category` deve essere `'sleep' | 'busy' | 'other'`
-- **Tutti i tipi**: `recurrence_rule.daysOfWeek` richiesto (array non vuoto di numeri 1-7)
-  - Pattern unificato: utente seleziona giorni per tutti i tipi (weekly/daily/monthly)
-- **Monthly**: `recurrence_rule.dayOfMonth` XOR `recurrence_rule.byWeekday` (uno solo)
-  - `dayOfMonth`: 1-31, oppure `-1` o `"last"` per ultimo giorno del mese
-  - `byWeekday`: formato "first-monday", "last-friday", etc.
-  - Se combinato con `daysOfWeek`, filtra per giorno settimana
+- Ricorrenze: Solo `weekly` e `daily` sono supportati
+- `recurrence_rule.daysOfWeek` richiesto (array non vuoto di numeri 1-7)
+  - Pattern unificato: utente seleziona giorni per tutti i tipi (weekly/daily)
+  - Toggle rapidi UI: "Giorni lavorativi" (1-5), "Weekend" (6-7), "Tutti" (1-7)
+- `recurrence_rule.until` può essere `null` (infinite) o timestamp nel futuro rispetto a `start_ts`
 
 ## Frontend: Solo Rendering
 

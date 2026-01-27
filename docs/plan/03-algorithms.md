@@ -44,12 +44,16 @@ WHERE user_id = ANY(:user_ids)
 
 ### Step 1 — Normalizzazione
 
-Clampa tutto nel giorno:
+Clampa tutto nel range del giorno (max 24h):
 
 ```typescript
 for (const interval of intervals) {
   interval.start = max(interval.start, D_start);
   interval.end = min(interval.end, D_end);
+  // Validazione: intervallo non può superare 24h
+  if (interval.end.getTime() - interval.start.getTime() > 24 * 60 * 60 * 1000) {
+    throw new Error('Interval cannot exceed 24 hours');
+  }
 }
 ```
 
@@ -86,8 +90,12 @@ function resolveRecurrences(
     const frequencyMap: Record<string, Frequency> = {
       daily: RRule.DAILY,
       weekly: RRule.WEEKLY,
-      monthly: RRule.MONTHLY,
     };
+    
+    // Validazione tipo ricorrenza
+    if (!frequencyMap[rule.type]) {
+      throw new Error(`Unsupported recurrence type: ${rule.type}. Only 'weekly' and 'daily' are supported.`);
+    }
     
     // Costruisci opzioni RRule
     const rruleOptions: Partial<RRule.Options> = {
@@ -96,7 +104,6 @@ function resolveRecurrences(
       until: rule.until ? new Date(rule.until) : undefined,
     };
     
-    // Aggiungi opzioni specifiche per tipo
     // Pattern unificato: tutti i tipi usano daysOfWeek
     const daysOfWeek = rule.daysOfWeek.map(d => d - 1); // rrule usa 0-6
     
@@ -106,28 +113,6 @@ function resolveRecurrences(
       // Daily con giorni selezionati: ricorrenza ogni giorno selezionato
       rruleOptions.byweekday = daysOfWeek;
       rruleOptions.freq = RRule.DAILY; // Mantieni daily, ma filtra per giorni
-    } else if (rule.type === 'monthly') {
-      // Monthly: combina dayOfMonth/byWeekday con daysOfWeek
-      if (rule.dayOfMonth) {
-        // Supporto ultimo giorno del mese
-        if (rule.dayOfMonth === -1 || rule.dayOfMonth === 'last') {
-          rruleOptions.bymonthday = [-1];
-        } else {
-          rruleOptions.bymonthday = [rule.dayOfMonth];
-        }
-        // Se daysOfWeek presente, filtra per giorno settimana
-        if (daysOfWeek.length > 0) {
-          rruleOptions.byweekday = daysOfWeek;
-        }
-      } else if (rule.byWeekday) {
-        // Es. "first-monday" -> { weekday: 0, n: 1 }
-        const [position, weekday] = parseByWeekday(rule.byWeekday);
-        rruleOptions.byweekday = [{ weekday, n: position }];
-        // Se daysOfWeek presente, deve matchare con byWeekday
-        if (daysOfWeek.length > 0 && daysOfWeek.includes(weekday)) {
-          rruleOptions.byweekday = [{ weekday, n: position }];
-        }
-      }
     }
     
     // Crea RRule
@@ -180,27 +165,6 @@ function resolveRecurrences(
   return resolved;
 }
 
-// Helper per parsare "first-monday", "last-friday", etc.
-function parseByWeekday(byWeekday: string): [number, number] {
-  const [position, weekday] = byWeekday.split('-');
-  const positionMap: Record<string, number> = {
-    first: 1,
-    second: 2,
-    third: 3,
-    fourth: 4,
-    last: -1,
-  };
-  const weekdayMap: Record<string, number> = {
-    monday: 0,
-    tuesday: 1,
-    wednesday: 2,
-    thursday: 3,
-    friday: 4,
-    saturday: 5,
-    sunday: 6,
-  };
-  return [positionMap[position], weekdayMap[weekday]];
-}
 
 // Helper per caricare exceptions per una ricorrenza
 async function loadRecurrenceExceptions(
@@ -326,7 +290,7 @@ Vedi [Rischi e Complessità](./08-risks.md) per edge cases da testare.
 Gli algoritmi sono implementati in `lib/algorithms/` come funzioni pure:
 
 - `lib/algorithms/merge.service.ts` - Funzione `mergeIntervals()` con priorità
-- `lib/algorithms/recurrence.service.ts` - Funzione `resolveRecurrences()` con `rrule`
+- `lib/algorithms/recurrence.service.ts` - Funzione `resolveRecurrences()` con `rrule` (weekly/daily)
 - `lib/algorithms/complement.service.ts` - Funzione `calculateFreeSlots()` per slot liberi
 
 La business logic che orchestra questi algoritmi è in `lib/services/`:

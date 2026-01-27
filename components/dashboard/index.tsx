@@ -55,7 +55,7 @@ export default function Dashboard() {
 	// The hook will skip the query if userIds is empty, so isLoading will be false
 	const { isLoading: isLoadingTimeline } = useTimeline(undefined, timelineUserIds)
 
-	const greetingName = activeUser?.name ?? t("dashboard.greetingFallback")
+	const greetingName = activeUser?.name ?? t("pages.dashboard.greetingFallback")
 	
 	// Only show overlay if we're actually loading data
 	// Timeline and connections queries are skipped when no data is available,
@@ -63,17 +63,17 @@ export default function Dashboard() {
 	const showOverlay = isLoadingUsers || isLoadingIntervals || isLoadingTimeline || isLoadingConnections
 
 	return (
-		<main className="max-w-5xl mx-auto py-4 px-4 lg:px-0 flex flex-col gap-4 relative">
+		<main className="max-w-5xl mx-auto py-4 flex flex-col gap-4 relative">
 			{showOverlay && <DashboardLoader />}
 			
 			<header
 				className={`space-y-0.5 ${showOverlay ? "opacity-40 pointer-events-none" : ""}`}
 			>
 				<h2 className="text-xl font-medium tracking-tight">
-					{t("dashboard.greeting", { name: greetingName })}
+					{t("pages.dashboard.greeting", { name: greetingName })}
 				</h2>
 				<p className="text-muted-foreground text-sm">
-					{t("dashboard.subtitle")}
+					{t("pages.dashboard.subtitle")}
 				</p>
 			</header>
 

@@ -3,16 +3,17 @@
 ## 1. Risoluzione Ricorrenze: Complessità Reale
 
 **Problemi:**
-- Ricorrenze che attraversano mezzanotte (es. 22:00-02:00)
-- Ricorrenze che si estendono oltre 24h (es. weekend lungo)
+- Ricorrenze che attraversano mezzanotte (es. 22:00-02:00) - max 24h
 - Gestione "until" date con timezone
 - Ricorrenze che cambiano con DST (Daylight Saving Time)
-- Calcolo efficiente: generare solo istanze nel range richiesto
+- Calcolo efficiente: generare solo istanze per il giorno corrente richiesto
+- Disattivazione giorni specifici tramite `recurrence_exceptions`
 
 **Soluzione:**
-- Usare libreria matura (es. `rrule` o `date-fns-tz`) per risoluzione ricorrenze
-- Testare edge cases: DST transitions, leap years, fine settimana
+- Usare libreria matura (es. `rrule`) per risoluzione ricorrenze (solo weekly/daily)
+- Testare edge cases: DST transitions, leap years
 - Validare che "until" sia sempre nel futuro rispetto a `start_ts` base
+- Gestire correttamente `recurrence_exceptions` per escludere giorni specifici (es. weekend)
 
 ## 2. Timezone Handling
 
@@ -103,13 +104,16 @@
 - Quale `start_ts` base usare? (primo lunedì del 2025 è arbitrario)
 - Come validare che ricorrenze esistenti siano corrette?
 - Cosa fare con ricorrenze senza "until" (infinite)?
+- Rimuovere ricorrenze monthly
+- Rimuovere intervalli > 24h
 
 **Soluzione:**
 - Script di migrazione che:
   1. Prende primo giorno della settimana con `repeatDays`
   2. Crea `start_ts` base (es. primo lunedì 2025-01-06 se repeatDays include 1)
-  3. Mantiene `recurrence_rule` identico
-  4. Valida che tutti i giorni siano coperti
+  3. Mantiene `recurrence_rule` solo per weekly/daily
+  4. Rimuove intervalli > 24h
+  5. Valida che tutti i giorni siano coperti
 - Testare migrazione su copia del DB reale
 - Rollback plan se migrazione fallisce
 
@@ -117,9 +121,11 @@
 
 **Edge cases da validare:**
 - `end_ts <= start_ts` (invalid) - ✅ DB CHECK constraint
-- Intervalli che si estendono oltre 24h (valid o no?) - ✅ Permesso, max 7 giorni
+- Intervalli che si estendono oltre 24h (invalid) - ✅ Max 24h, solo giorno singolo
+- Intervalli per giorni futuri (invalid) - ✅ Solo giorno corrente supportato
 - Ricorrenze con `until < start_ts` (invalid)
 - Ricorrenze con `daysOfWeek` vuoto (invalid)
+- Ricorrenze con `type` diverso da `weekly` o `daily` (invalid) - ✅ Monthly deprecato
 - Overlap detection: stesso utente può avere intervalli sovrapposti? - ✅ Permesso
 
 **Soluzione:**
@@ -146,8 +152,9 @@
 ## 11. Testing Strategy
 
 **Cosa testare:**
-- Algoritmo merge con tutti gli edge cases
-- Risoluzione ricorrenze con DST, leap years
+- Algoritmo merge con tutti gli edge cases (max 24h)
+- Risoluzione ricorrenze (weekly/daily) con DST, leap years
+- Disattivazione giorni specifici tramite exceptions
 - Query SQL con 100+ userIds
 - Performance con dataset realistici
 - Redux selectors memoization

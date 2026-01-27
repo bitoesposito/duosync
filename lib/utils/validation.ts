@@ -8,26 +8,10 @@ import { z } from "zod"
 
 // Recurrence rule validation
 export const recurrenceRuleSchema = z.object({
-	type: z.enum(["weekly", "daily", "monthly"]),
+	type: z.enum(["weekly", "daily"]),
 	daysOfWeek: z.array(z.number().min(1).max(7)).min(1), // At least one day
 	until: z.string().nullable().optional(),
-	// Monthly-specific (mutually exclusive)
-	dayOfMonth: z.number().min(-1).max(31).optional(),
-	byWeekday: z.string().optional(),
-}).refine(
-	(data) => {
-		// Monthly must have either dayOfMonth or byWeekday, but not both
-		if (data.type === "monthly") {
-			const hasDayOfMonth = data.dayOfMonth !== undefined
-			const hasByWeekday = data.byWeekday !== undefined
-			return hasDayOfMonth !== hasByWeekday // XOR
-		}
-		return true
-	},
-	{
-		message: "Monthly recurrence must have either dayOfMonth or byWeekday, but not both",
-	}
-)
+})
 
 // Interval creation/update validation
 export const intervalSchema = z.object({
@@ -47,15 +31,15 @@ export const intervalSchema = z.object({
 	}
 ).refine(
 	(data) => {
-		// Duration must be <= 7 days
+		// Duration must be <= 24 hours
 		const start = new Date(data.start_ts)
 		const end = new Date(data.end_ts)
 		const diffMs = end.getTime() - start.getTime()
-		const diffDays = diffMs / (1000 * 60 * 60 * 24)
-		return diffDays <= 7
+		const maxDurationMs = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
+		return diffMs <= maxDurationMs
 	},
 	{
-		message: "Interval duration must be <= 7 days",
+		message: "Interval duration must be <= 24 hours",
 		path: ["end_ts"],
 	}
 )

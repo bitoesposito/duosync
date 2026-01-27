@@ -145,9 +145,15 @@
 			"title": "Dashboard",
 			"welcome": "Welcome, {name}!",
 			"accountInformation": "Account Information",
+			"accountMenu": "Account menu",
 			"name": "Name",
 			"email": "Email",
 			"userId": "User ID",
+			"language": "Language",
+			"languages": {
+				"italian": "Italiano",
+				"english": "English"
+			},
 			"features": "Features",
 			"featuresDescription": "Main features will be available here.",
 			"loading": "Loading...",
@@ -173,13 +179,18 @@
 		"title": "Availability",
 		"loading": "Loading availability...",
 		"personalTimeline": "Your availability",
-		"sharedTimeline": "Shared availability",
+		"sharedTimeline": "Shared available time",
 		"legendAvailable": "Available",
 		"legendBusy": "Busy",
 		"legendSleep": "Sleep",
 		"freeSlots": "free slots",
 		"noFreeTime": "No free time available",
-		"noData": "No data available"
+		"noData": "No data entered",
+		"noOverlap": "No overlap found",
+		"slot": "slot",
+		"slots": "slots",
+		"intervalsList": "Intervals list",
+		"noSleepSet": "No sleep time set"
 	},
 	"form": {
 		"title": "Create Interval",
@@ -187,12 +198,15 @@
 	},
 	"intervals": {
 		"title": "Intervals",
+		"singular": "interval",
+		"plural": "intervals",
 		"create": {
 			"title": "Create interval",
 			"start": "Start",
 			"end": "End",
 			"category": "Category",
 			"description": "Description",
+			"descriptionPlaceholder": "Add description...",
 			"recurrence": "Recurrence",
 			"submit": "Create"
 		},
@@ -214,7 +228,10 @@
 			"none": "None",
 			"daily": "Daily",
 			"weekly": "Weekly",
-			"monthly": "Monthly",
+			"title": "Recurrence",
+			"weekdays": "Weekdays",
+			"weekend": "Weekend",
+			"all": "All",
 			"daysOfWeek": {
 				"monday": "Monday",
 				"tuesday": "Tuesday",
@@ -224,8 +241,9 @@
 				"saturday": "Saturday",
 				"sunday": "Sunday"
 			},
-			"until": "Until",
-			"infinite": "Infinite"
+			"until": "Ends on",
+			"infinite": "Infinite",
+			"removeUntil": "Remove end date"
 		}
 	},
 	"connections": {
@@ -264,7 +282,30 @@
 		"invalidDate": "Invalid date",
 		"invalidTime": "Invalid time",
 		"endBeforeStart": "End must be after start",
-		"maxDuration": "Maximum duration is 7 days",
-		"invalidRecurrence": "Invalid recurrence rule"
+		"maxDuration": "Maximum duration is 24 hours",
+		"invalidRecurrence": "Invalid recurrence rule",
+		"overlapDetected": "Overlap detected"
+	},
+	"form": {
+		"addInterval": "Add Interval",
+		"date": "Date",
+		"start": "Start",
+		"end": "End",
+		"duration": "Duration",
+		"endTime": "End Time",
+		"hours": "Hours",
+		"minutes": "Minutes",
+		"quickPresets": "Quick Presets",
+		"endOfDay": "End of day",
+		"addToList": "Add to List",
+		"confirmSave": "Confirm & Save",
+		"confirmAll": "Confirm All",
+		"saving": "Saving...",
+		"intervalsSaved": "Intervals saved",
+		"reviewList": "Review List",
+		"loginRequired": "Login required",
+		"selectRecurrenceType": "Select recurrence type",
+		"selectAtLeastOneDay": "Select at least one day",
+		"untilDateMustBeFuture": "Until date must be in future"
 	}
 }

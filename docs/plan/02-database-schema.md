@@ -59,8 +59,8 @@ export const busyIntervals = pgTable("busy_intervals", {
 }, (table) => ({
   // CHECK constraint: end_ts > start_ts
   endAfterStart: check("end_after_start", sql`${table.endTs} > ${table.startTs}`),
-  // CHECK constraint: max 7 days
-  maxDuration: check("max_duration", sql`${table.endTs} - ${table.startTs} <= INTERVAL '7 days'`),
+  // CHECK constraint: max 24 hours
+  maxDuration: check("max_duration", sql`${table.endTs} - ${table.startTs} <= INTERVAL '24 hours'`),
 }));
 ```
 
@@ -87,12 +87,14 @@ ON busy_intervals (user_id);
 
 ### recurrence_rule (JSONB structure)
 
+Le ricorrenze permettono di definire intervalli che si ripetono automaticamente. Possono essere disattivate per giorni specifici tramite `recurrence_exceptions`.
+
 **Weekly:**
 ```json
 {
   "type": "weekly",
   "daysOfWeek": [1, 2, 3, 4, 5], // 1=Monday, 7=Sunday
-  "until": "2025-12-31T23:59:59Z" // nullable, se null = infinite
+  "until": null // nullable, se null = infinite
 }
 ```
 
@@ -101,31 +103,17 @@ ON busy_intervals (user_id);
 {
   "type": "daily",
   "daysOfWeek": [1, 2, 3, 4, 5], // Giorni selezionati (es. weekdays)
-  "until": "2025-03-15T23:59:59Z" // nullable, se null = infinite
-}
-```
-
-**Monthly:**
-```json
-{
-  "type": "monthly",
-  "daysOfWeek": [1], // Opzionale: filtra per giorno settimana (es. solo lunedì)
-  "dayOfMonth": 15, // 1-31, oppure -1 o "last" per ultimo giorno del mese
-  "byWeekday": "first-monday", // "first-monday", "last-friday", etc.
-  "until": "2025-12-31T23:59:59Z" // nullable, se null = infinite
+  "until": null // nullable, se null = infinite
 }
 ```
 
 **Validazione:**
-- `type` deve essere `"weekly" | "daily" | "monthly"`
-- **Tutti i tipi**: `daysOfWeek` richiesto (array non vuoto di numeri 1-7)
+- `type` deve essere `"weekly" | "daily"`
+- `daysOfWeek` richiesto (array non vuoto di numeri 1-7)
   - Pattern unificato: utente seleziona giorni per tutti i tipi
   - Toggle rapidi UI: "Giorni lavorativi" (1-5), "Weekend" (6-7), "Tutti" (1-7)
-- **Monthly**: `dayOfMonth` XOR `byWeekday` (uno solo, non entrambi)
-  - `dayOfMonth`: 1-31, oppure `-1` o `"last"` per ultimo giorno del mese
-  - `byWeekday`: formato "first-monday", "last-friday", etc.
-  - Se combinato con `daysOfWeek`, filtra per giorno settimana
 - `until` può essere `null` (infinite) o timestamp nel futuro rispetto a `start_ts`
+- Disattivazione giorni specifici: Usare `recurrence_exceptions` per escludere giorni (es. weekend)
 
 ### recurrence_exceptions (nuova tabella)
 
@@ -181,22 +169,21 @@ INDEX(userId)
 **Non esistono "appointment giornalieri" o "template": esistono solo intervalli.**
 
 - Un intervallo singolo: `start_ts` e `end_ts` specifici
-- Un intervallo ricorrente: `start_ts` e `end_ts` base + `recurrence_rule`
+- Un intervallo ricorrente: `start_ts` e `end_ts` base + `recurrence_rule` (weekly/daily)
 
 ### Ricorrenze: Risoluzione On-Demand
 
 **Le ricorrenze:**
-- ❌ NON si espandono
-- ❌ NON si materializzano
-- ✅ Si risolvono solo nel range richiesto
+- NON si espandono
+- NON si materializzano
+- Si risolvono solo per il giorno richiesto
 
 **Esempio:**
 - Intervallo base: `2025-01-01 09:00:00` → `2025-01-01 17:00:00`
 - Recurrence: `{ type: "weekly", daysOfWeek: [1, 2, 3, 4, 5] }`
-- Query per "martedì 10 marzo 2025":
-  - Proietti solo lì: `2025-03-10 09:00:00` → `2025-03-10 17:00:00`
-  - Solo per quel range
-  - Poi lo tratti come intervallo normale
+- Query per un giorno specifico (es. martedì 10 marzo 2025):
+  - Risolve solo per quel giorno: `2025-03-10 09:00:00` → `2025-03-10 17:00:00`
+  - Tratta il risultato come intervallo normale
 
 ## Migrazione da Schema Vecchio
 

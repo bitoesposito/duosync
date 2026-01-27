@@ -5,7 +5,7 @@
  * Uses localStorage to persist locale preference
  */
 
-import { useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 import enMessages from "@/i18n/en.json"
 import itMessages from "@/i18n/it.json"
 
@@ -17,13 +17,21 @@ const messages: Record<string, Messages> = {
 }
 
 export function useI18n() {
-	const locale = useMemo(() => {
-		if (typeof window === "undefined") return "en"
-		return localStorage.getItem("locale") || "en"
+	// Start with "en" to match server-side rendering
+	const [locale, setLocaleState] = useState<string>("en")
+	const [isClient, setIsClient] = useState(false)
+
+	// Only read from localStorage on client after mount
+	useEffect(() => {
+		setIsClient(true)
+		const storedLocale = localStorage.getItem("locale") || "en"
+		setLocaleState(storedLocale)
 	}, [])
 
 	const t = useMemo(() => {
-		const localeMessages = messages[locale] || messages.en
+		// Use "en" during SSR and initial render to avoid hydration mismatch
+		const currentLocale = isClient ? locale : "en"
+		const localeMessages = messages[currentLocale] || messages.en
 
 		return (key: string, params?: Record<string, string | number>) => {
 			const keys = key.split(".")
@@ -61,7 +69,7 @@ export function useI18n() {
 
 			return value
 		}
-	}, [locale])
+	}, [locale, isClient])
 
 	const setLocale = (newLocale: string) => {
 		if (typeof window !== "undefined") {

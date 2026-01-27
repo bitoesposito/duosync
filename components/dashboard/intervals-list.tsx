@@ -104,7 +104,7 @@ export default function IntervalsList() {
 			<div className="flex items-center justify-between">
 				<h3 className="text-lg font-semibold">{t("intervals.title")}</h3>
 				<span className="text-sm text-muted-foreground">
-					{totalIntervals} {totalIntervals === 1 ? "interval" : "intervals"}
+					{totalIntervals} {totalIntervals === 1 ? t("intervals.singular") : t("intervals.plural")}
 				</span>
 			</div>
 

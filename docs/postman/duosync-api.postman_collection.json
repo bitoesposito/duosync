@@ -293,29 +293,6 @@
 					"response": []
 				},
 				{
-					"name": "Create Monthly Recurring Interval",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"start_ts\": \"2024-01-15T10:00:00Z\",\n  \"end_ts\": \"2024-01-15T11:00:00Z\",\n  \"category\": \"busy\",\n  \"description\": \"Monthly review\",\n  \"recurrence_rule\": {\n    \"type\": \"monthly\",\n    \"daysOfWeek\": [],\n    \"dayOfMonth\": 15,\n    \"until\": null\n  }\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/intervals",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "intervals"]
-						},
-						"description": "Creates a monthly recurring interval. Example: monthly review on the 15th of each month."
-					},
-					"response": []
-				},
-				{
 					"name": "Get Interval by ID",
 					"request": {
 						"method": "GET",

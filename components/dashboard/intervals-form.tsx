@@ -1,17 +1,17 @@
 /**
  * Intervals Form Component
  * 
- * Improved form with better UX:
+ * Form for creating intervals with:
  * - Collapsible on mobile
- * - Drafting Mode (Batch Creation)
  * - Smart start time auto-fill
+ * - Direct save (no draft mode)
  * - Separated concerns via sub-components
  */
 
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
-import { ChevronDownIcon, ChevronUpIcon, Loader2Icon, PlusIcon, CheckIcon, SaveIcon, Trash2Icon } from "lucide-react"
+import { ChevronDownIcon, ChevronUpIcon, Loader2Icon, CheckIcon } from "lucide-react"
 import { useI18n } from "@/hooks/use-i18n"
 import { useIntervals } from "@/hooks/use-intervals"
 import { useAuth } from "@/hooks/use-auth"
@@ -31,7 +31,7 @@ interface FormData {
 	category: Category
 	description: string
 	isRepeating: boolean
-	recurrenceType: "daily" | "weekly" | "monthly" | null
+	recurrenceType: "daily" | "weekly" | null
 	repeatDays: number[] // 1=Monday, 7=Sunday (for weekly)
 	recurrenceUntil: string // YYYY-MM-DD or empty
 }
@@ -44,15 +44,13 @@ export default function IntervalsForm() {
 	const { selectedDate, intervals, create, isSaving, refetch, isLoading, setDate } = useIntervals()
 	const [isOpen, setIsOpen] = useState(false)
 
-	const [drafts, setDrafts] = useState<FormData[]>([])
-
 	const [formData, setFormData] = useState<FormData>(() => {
 		const today = selectedDate || new Date().toISOString().split("T")[0]
 		return {
 			date: today,
 			startTime: "",
 			endTime: "",
-			category: "other",
+			category: "busy",
 			description: "",
 			isRepeating: false,
 			recurrenceType: null,
@@ -120,7 +118,7 @@ export default function IntervalsForm() {
 		setHasUserEditedTimes(true)
 	}
 
-	const handleRecurrenceTypeChange = useCallback((type: "daily" | "weekly" | "monthly") => {
+	const handleRecurrenceTypeChange = useCallback((type: "daily" | "weekly") => {
 		handleChange("recurrenceType", type)
 		if (type === "daily") {
 			handleChange("repeatDays", ALL_WEEK)
@@ -128,8 +126,6 @@ export default function IntervalsForm() {
 			const date = new Date(formData.date)
 			const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay()
 			handleChange("repeatDays", [dayOfWeek])
-		} else if (type === "monthly") {
-			handleChange("repeatDays", [])
 		}
 	}, [formData.date, handleChange])
 
@@ -141,18 +137,18 @@ export default function IntervalsForm() {
 			end.setDate(end.getDate() + 1)
 		}
 
-		if (end <= start) return "End time must be after start time"
+		if (end <= start) return t("validation.endBeforeStart")
 
 		const diffMs = end.getTime() - start.getTime()
-		if (diffMs > 7 * 24 * 60 * 60 * 1000) return "Duration too long"
+		if (diffMs > 24 * 60 * 60 * 1000) return t("validation.maxDuration")
 
 		if (data.isRepeating) {
-			if (!data.recurrenceType) return "Select recurrence type"
+			if (!data.recurrenceType) return t("form.selectRecurrenceType")
 			if (data.recurrenceType === "weekly" && data.repeatDays.length === 0) {
-				return "Select at least one day"
+				return t("form.selectAtLeastOneDay")
 			}
 			if (data.recurrenceUntil) {
-				if (data.recurrenceUntil <= data.date) return "Until date must be in future"
+				if (data.recurrenceUntil <= data.date) return t("form.untilDateMustBeFuture")
 			}
 		}
 
@@ -171,11 +167,6 @@ export default function IntervalsForm() {
 			rule.daysOfWeek = [1, 2, 3, 4, 5, 6, 7]
 		} else if (data.recurrenceType === "weekly") {
 			rule.daysOfWeek = data.repeatDays
-		} else if (data.recurrenceType === "monthly") {
-			const date = new Date(data.date)
-			const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay()
-			rule.daysOfWeek = [dayOfWeek]
-			rule.dayOfMonth = date.getDate()
 		}
 
 		if (data.recurrenceUntil) {
@@ -190,7 +181,7 @@ export default function IntervalsForm() {
 	const resetForm = () => {
 		setFormData(prev => ({
 			...prev,
-			category: "other",
+			category: "busy",
 			description: "",
 			isRepeating: false,
 			recurrenceType: null,
@@ -202,23 +193,7 @@ export default function IntervalsForm() {
 		setHasUserEditedTimes(false)
 	}
 
-	const handleAddDraft = (e: React.MouseEvent) => {
-		e.preventDefault()
-		const validationError = validateForm(formData)
-		if (validationError) {
-			setError(validationError)
-			return
-		}
-
-		setDrafts(prev => [...prev, formData])
-		resetForm()
-	}
-
-	const removeDraft = (index: number) => {
-		setDrafts(prev => prev.filter((_, i) => i !== index))
-	}
-
-	const handleSaveAll = async () => {
+	const handleSave = async () => {
 		setError(null)
 		setSuccess(false)
 
@@ -227,41 +202,31 @@ export default function IntervalsForm() {
 			return
 		}
 
-		const itemsToSave = drafts.length > 0 ? drafts : [formData]
-
-		// Validate all if saving drafts, or single if saving form direct
-		if (drafts.length === 0) {
-			const err = validateForm(formData)
-			if (err) {
-				setError(err)
-				return
-			}
+		const err = validateForm(formData)
+		if (err) {
+			setError(err)
+			return
 		}
 
 		try {
 			const userTimezone = user.timezone || "UTC"
+			const startTs = localToUTC(formData.startTime, formData.date, userTimezone)
+			const endTs = localToUTC(formData.endTime, formData.date, userTimezone)
 
-			// Process sequentially to ensure order/consistency
-			for (const item of itemsToSave) {
-				const startTs = localToUTC(item.startTime, item.date, userTimezone)
-				const endTs = localToUTC(item.endTime, item.date, userTimezone)
-
-				if (item.endTime <= item.startTime) {
-					endTs.setDate(endTs.getDate() + 1)
-				}
-
-				const input: CreateIntervalInput = {
-					start_ts: startTs.toISOString(),
-					end_ts: endTs.toISOString(),
-					category: item.category,
-					description: item.description || null,
-					recurrence_rule: buildRecurrenceRule(item),
-				}
-
-				await create(input)
+			if (formData.endTime <= formData.startTime) {
+				endTs.setDate(endTs.getDate() + 1)
 			}
 
-			setDrafts([])
+			const input: CreateIntervalInput = {
+				start_ts: startTs.toISOString(),
+				end_ts: endTs.toISOString(),
+				category: formData.category,
+				description: formData.description || null,
+				recurrence_rule: buildRecurrenceRule(formData),
+			}
+
+			await create(input)
+
 			resetForm()
 			setSuccess(true)
 			setTimeout(() => setSuccess(false), 3000)
@@ -276,67 +241,26 @@ export default function IntervalsForm() {
 		<section className="w-full flex flex-col bg-background/50 md:bg-transparent border-b border-border md:border-b-0 space-y-4">
 			{/* Header */}
 			<header
-				className="flex items-center justify-between py-2 md:pt-0 pt-2 md:cursor-default cursor-pointer group px-4 md:px-0"
+				className="flex items-center justify-between md:pt-0 pt-2 md:cursor-default cursor-pointer group md:px-0"
 				onClick={() => setIsOpen(!isOpen)}
 			>
 				<h2 className="text-xs font-semibold tracking-tight uppercase text-foreground/80 group-hover:text-foreground transition-colors">
-					Add Interval
+					{t("form.addInterval")}
 				</h2>
 				<button
 					type="button"
 					className="md:hidden text-muted-foreground hover:text-foreground p-1"
 				>
-					{isOpen ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
+					{isOpen ? <ChevronUpIcon className="w-4 h-4 cursor-pointer" /> : <ChevronDownIcon className="w-4 h-4 cursor-pointer" />}
 				</button>
 			</header>
 
 			{/* Form Content */}
 			<div className={cn(
-				"md:block overflow-hidden transition-all duration-300 ease-in-out px-4 md:px-0",
+				"md:block overflow-hidden transition-all duration-300 ease-in-out",
 				isOpen ? "max-h-[2000px] opacity-100 pb-4" : "max-h-0 opacity-0 md:max-h-none md:opacity-100 md:pb-0"
 			)}>
 				<div className="flex flex-col gap-3">
-					{error && (
-						<div className="bg-destructive/10 text-destructive text-[10px] p-2 border border-destructive/20">
-							{error}
-						</div>
-					)}
-
-					{success && (
-						<div className="bg-emerald-500/10 text-emerald-500 text-[10px] p-2 border border-emerald-500/20 flex items-center gap-2">
-							<CheckIcon className="w-3 h-3" /> Intervals saved
-						</div>
-					)}
-
-					{/* Drafts List */}
-					{drafts.length > 0 && (
-						<div className="flex flex-col gap-1 mb-1 p-2 bg-muted/20 rounded-md border border-border/50">
-							<div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Review List ({drafts.length})</div>
-							{drafts.map((draft, idx) => (
-								<div key={idx} className="flex items-center justify-between text-xs p-1.5 bg-background border border-border rounded-sm">
-									<div className="flex flex-col leading-tight">
-										<span className="font-medium">{draft.startTime} - {draft.endTime}</span>
-										<span className="text-[10px] text-muted-foreground flex items-center gap-1.5 capitalize">
-											<span className={cn(
-												"w-1.5 h-1.5 rounded-full",
-												draft.category === 'busy' && "bg-zinc-500",
-												draft.category === 'sleep' && "bg-purple-500",
-												draft.category === 'other' && "bg-zinc-700"
-											)} />
-											{draft.category} {draft.isRepeating && "(Recurring)"}
-										</span>
-									</div>
-									<button
-										onClick={() => removeDraft(idx)}
-										className="text-muted-foreground hover:text-destructive p-1"
-									>
-										<Trash2Icon className="w-3 h-3" />
-									</button>
-								</div>
-							))}
-						</div>
-					)}
-
 					<div className="flex flex-col gap-3">
 						<TimeInputs
 							startTime={formData.startTime}
@@ -363,7 +287,7 @@ export default function IntervalsForm() {
 									type="text"
 									value={formData.description}
 									onChange={(e) => handleChange("description", e.target.value)}
-									placeholder="Add description..."
+									placeholder={t("intervals.create.descriptionPlaceholder")}
 									className="w-full bg-background/50 border border-input rounded-md h-8 px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring transition-all"
 								/>
 							</div>
@@ -385,45 +309,38 @@ export default function IntervalsForm() {
 
 					{/* Actions */}
 					<div className="flex flex-col gap-1.5 pt-1">
-						{/* Add to List Button */}
+						{/* Confirm Button */}
 						<button
 							type="button"
-							onClick={handleAddDraft}
+							onClick={handleSave}
 							disabled={isSaving || !user || !isValid}
-							className="w-full h-8 text-xs font-medium uppercase tracking-wide bg-muted hover:bg-muted/80 text-foreground flex items-center justify-center gap-2 transition-all rounded-sm"
-						>
-							<PlusIcon className="w-3 h-3" />
-							<span>Add to List</span>
-						</button>
-
-						{/* Confirm / Save Button */}
-						<button
-							type="button"
-							onClick={handleSaveAll}
-							disabled={isSaving || !user || (drafts.length === 0 && !isValid)}
-							className={cn(
-								"w-full h-8 text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all rounded-sm shadow-sm",
-								drafts.length > 0
-									? "bg-primary text-primary-foreground hover:bg-primary/90" // Primary action if drafts exist
-									: "bg-background border border-primary/20 text-muted-foreground hover:text-foreground hover:border-primary/50" // Subtler if empty
-							)}
+							className="w-full h-8 text-xs font-bold uppercase tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center gap-2 transition-all rounded-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							{isSaving ? (
 								<>
 									<Loader2Icon className="w-3 h-3 animate-spin" />
-									<span>Saving...</span>
+									<span>{t("form.saving")}</span>
 								</>
 							) : (
-								<>
-									<SaveIcon className="w-3 h-3" />
-									<span>{drafts.length > 0 ? `Confirm All (${drafts.length})` : "Confirm & Save"}</span>
-								</>
+								t("common.confirm")
 							)}
 						</button>
 					</div>
 
 					{!user && (
-						<p className="text-[10px] text-muted-foreground text-center">Login required</p>
+						<p className="text-[10px] text-muted-foreground text-center">{t("form.loginRequired")}</p>
+					)}
+
+					{error && (
+						<div className="bg-destructive/10 text-destructive text-[10px] p-2 border border-destructive/20">
+							{error}
+						</div>
+					)}
+
+					{success && (
+						<div className="bg-emerald-500/10 text-emerald-500 text-[10px] p-2 border border-emerald-500/20 flex items-center gap-2">
+							<CheckIcon className="w-3 h-3" /> {t("form.intervalsSaved")}
+						</div>
 					)}
 				</div>
 			</div>

@@ -19,12 +19,9 @@ export interface Interval {
 
 // Recurrence rule types
 export interface RecurrenceRule {
-	type: "weekly" | "daily" | "monthly"
+	type: "weekly" | "daily"
 	daysOfWeek: number[] // 1=Monday, 7=Sunday
 	until?: string | null // ISO timestamp, null = infinite
-	// Monthly-specific fields (mutually exclusive)
-	dayOfMonth?: number // 1-31, or -1/"last" for last day of month
-	byWeekday?: string // "first-monday", "last-friday", etc.
 }
 
 export interface RecurrenceException {

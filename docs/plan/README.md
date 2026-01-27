@@ -42,9 +42,9 @@ Documentazione completa delle specifiche infrastrutturali per il refactor di Duo
 **Tutte le decisioni sono integrate nella documentazione:**
 
 - **Timezone**: Multi-timezone (UTC calcoli, display locale) - Vedi `01-principles.md`
-- **Intervalli > 24h**: Max 7 giorni - Vedi `02-database-schema.md`
+- **Intervalli**: Max 24h - Vedi `02-database-schema.md`
 - **Overlap utente**: Permesso - Vedi `02-database-schema.md`
-- **Recurrence Rules**: Weekly + daily + monthly - Vedi `02-database-schema.md`
+- **Recurrence Rules**: Weekly + daily - Vedi `02-database-schema.md`
 - **Cache TTL**: 5 minuti - Vedi `05-state-management.md`
 - **Token Strategy**: UUID v4 nel DB - Vedi `06-authentication.md`
 - **Connection Limits**: 50 (solo `accepted`) - Vedi `07-connections.md`

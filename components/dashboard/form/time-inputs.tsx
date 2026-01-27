@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
-import { ClockIcon, ArrowRightIcon, CalendarIcon, ChevronUpIcon, ChevronDownIcon } from "lucide-react"
+import { ClockIcon, CalendarIcon, ChevronUpIcon, ChevronDownIcon } from "lucide-react"
 import type { Interval } from "@/types"
 import { useAuth } from "@/hooks/use-auth"
+import { useI18n } from "@/hooks/use-i18n"
 import { isStartTimeWithinInterval } from "@/lib/services/slot-finder.service"
 import { cn } from "@/lib/utils"
 
@@ -31,7 +32,8 @@ export function TimeInputs({
     onValidationChange,
 }: TimeInputsProps) {
     const { user } = useAuth()
-    const [mode, setMode] = useState<"duration" | "time">("duration")
+    const { t } = useI18n()
+    const [mode, setMode] = useState<"duration" | "time">("time")
 
     // Derived duration state
     const durationState = useMemo(() => {
@@ -91,8 +93,16 @@ export function TimeInputs({
         let totalMinutes = 0
         if (type === "hours") {
             totalMinutes = value * 60 + currentMinutes
+            // Limit to 24 hours max
+            if (totalMinutes > 24 * 60) {
+                totalMinutes = 24 * 60
+            }
         } else {
             totalMinutes = currentHours * 60 + value
+            // Limit to 24 hours max
+            if (totalMinutes > 24 * 60) {
+                totalMinutes = 24 * 60
+            }
         }
 
         applyDuration(totalMinutes)
@@ -103,7 +113,7 @@ export function TimeInputs({
             {/* Date Input */}
             <div className="flex flex-col gap-1">
                 <label htmlFor="date" className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-                    Data
+                    {t("form.date")}
                 </label>
                 <div className="relative group">
                     <CalendarIcon className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none" />
@@ -123,7 +133,7 @@ export function TimeInputs({
                 {/* Start Time */}
                 <div className="flex-1 flex flex-col gap-1">
                     <label htmlFor="startTime" className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-                        Inizio
+                        {t("form.start")}
                     </label>
                     <div className="relative group">
                         <ClockIcon className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none" />
@@ -141,7 +151,7 @@ export function TimeInputs({
                         />
                     </div>
                     {hasOverlap && (
-                        <p className="text-[10px] text-destructive pt-1 font-medium">Overlap detected</p>
+                        <p className="text-[10px] text-destructive pt-1 font-medium">{t("validation.overlapDetected")}</p>
                     )}
                 </div>
             </div>
@@ -150,24 +160,12 @@ export function TimeInputs({
             <div className="flex flex-col gap-2 pt-1">
                 <div className="flex items-center justify-between">
                     <label className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-                        <ClockIcon className="w-3 h-3" /> Durata
+                        <ClockIcon className="w-3 h-3" /> {t("form.duration")}
                     </label>
                 </div>
 
                 {/* Toggle */}
                 <div className="flex p-0.5 bg-muted/30 rounded-md border border-border/50">
-                    <button
-                        type="button"
-                        onClick={() => setMode("duration")}
-                        className={cn(
-                            "flex-1 text-[10px] uppercase tracking-wider py-1 font-semibold rounded-sm transition-all",
-                            mode === "duration"
-                                ? "bg-background shadow-sm text-foreground"
-                                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                        )}
-                    >
-                        Durata
-                    </button>
                     <button
                         type="button"
                         onClick={() => setMode("time")}
@@ -178,7 +176,19 @@ export function TimeInputs({
                                 : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                         )}
                     >
-                        Fine
+                        {t("form.endTime")}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setMode("duration")}
+                        className={cn(
+                            "flex-1 text-[10px] uppercase tracking-wider py-1 font-semibold rounded-sm transition-all",
+                            mode === "duration"
+                                ? "bg-background shadow-sm text-foreground"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        )}
+                    >
+                        {t("form.duration")}
                     </button>
                 </div>
 
@@ -200,24 +210,39 @@ export function TimeInputs({
                         {/* Hours / Minutes Inputs */}
                         <div className="flex gap-2">
                             <div className="flex-1 flex flex-col gap-1">
-                                <label className="text-[10px] text-muted-foreground/70 font-semibold uppercase tracking-wider">Ore</label>
+                                <label className="text-[10px] text-muted-foreground/70 font-semibold uppercase tracking-wider">{t("form.hours")}</label>
                                 <div className="relative">
                                     <input
                                         type="number"
                                         min="0"
-                                        max="23"
+                                        max="24"
                                         value={durationState.hours}
-                                        onChange={(e) => handleDurationChange("hours", parseInt(e.target.value) || 0)}
+                                        onChange={(e) => {
+                                            const hours = parseInt(e.target.value) || 0
+                                            // Limit to 24 hours max, considering minutes
+                                            const maxHours = durationState.minutes === 0 ? 24 : 23
+                                            handleDurationChange("hours", Math.min(hours, maxHours))
+                                        }}
                                         className="w-full bg-background/50 border border-input rounded-md h-8 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-ring transition-all"
                                     />
                                     <div className="absolute right-1 top-1 flex flex-col scale-90">
-                                        <button type="button" onClick={() => handleDurationChange("hours", durationState.hours + 1)} className="p-0.5 hover:text-primary text-muted-foreground"><ChevronUpIcon className="w-2 h-2" /></button>
-                                        <button type="button" onClick={() => handleDurationChange("hours", Math.max(0, durationState.hours - 1))} className="p-0.5 hover:text-primary text-muted-foreground"><ChevronDownIcon className="w-2 h-2" /></button>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => {
+                                                const maxHours = durationState.minutes === 0 ? 24 : 23
+                                                handleDurationChange("hours", Math.min(durationState.hours + 1, maxHours))
+                                            }} 
+                                            disabled={durationState.hours >= (durationState.minutes === 0 ? 24 : 23)}
+                                            className="p-0.5 hover:text-primary text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <ChevronUpIcon className="w-2 h-2 cursor-pointer" />
+                                        </button>
+                                        <button type="button" onClick={() => handleDurationChange("hours", Math.max(0, durationState.hours - 1))} className="p-0.5 hover:text-primary text-muted-foreground"><ChevronDownIcon className="w-2 h-2 cursor-pointer" /></button>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex-1 flex flex-col gap-1">
-                                <label className="text-[10px] text-muted-foreground/70 font-semibold uppercase tracking-wider">Minuti</label>
+                                <label className="text-[10px] text-muted-foreground/70 font-semibold uppercase tracking-wider">{t("form.minutes")}</label>
                                 <div className="relative">
                                     <input
                                         type="number"
@@ -229,8 +254,8 @@ export function TimeInputs({
                                         className="w-full bg-background/50 border border-input rounded-md h-8 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-ring transition-all"
                                     />
                                     <div className="absolute right-1 top-1 flex flex-col scale-90">
-                                        <button type="button" onClick={() => handleDurationChange("minutes", durationState.minutes + 5)} className="p-0.5 hover:text-primary text-muted-foreground"><ChevronUpIcon className="w-2 h-2" /></button>
-                                        <button type="button" onClick={() => handleDurationChange("minutes", Math.max(0, durationState.minutes - 5))} className="p-0.5 hover:text-primary text-muted-foreground"><ChevronDownIcon className="w-2 h-2" /></button>
+                                        <button type="button" onClick={() => handleDurationChange("minutes", durationState.minutes + 5)} className="p-0.5 hover:text-primary text-muted-foreground"><ChevronUpIcon className="w-2 h-2 cursor-pointer" /></button>
+                                        <button type="button" onClick={() => handleDurationChange("minutes", Math.max(0, durationState.minutes - 5))} className="p-0.5 hover:text-primary text-muted-foreground"><ChevronDownIcon className="w-2 h-2 cursor-pointer" /></button>
                                     </div>
                                 </div>
                             </div>
@@ -238,7 +263,7 @@ export function TimeInputs({
 
                         {/* Quick Presets */}
                         <div className="flex flex-col gap-1">
-                            <label className="text-[10px] text-muted-foreground/70 font-semibold uppercase tracking-wider mb-1">Preset Rapidi</label>
+                            <label className="text-[10px] text-muted-foreground/70 font-semibold uppercase tracking-wider mb-1">{t("form.quickPresets")}</label>
                             <div className="grid grid-cols-4 gap-1.5">
                                 <button
                                     type="button"
@@ -259,7 +284,7 @@ export function TimeInputs({
                                     onClick={setEndOfDay}
                                     className="col-span-2 py-1 text-[10px] font-medium uppercase tracking-wide bg-muted/40 hover:bg-muted border border-border/50 hover:border-border rounded-sm transition-all"
                                 >
-                                    Fine giornata
+                                    {t("form.endOfDay")}
                                 </button>
                             </div>
                         </div>

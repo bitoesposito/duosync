@@ -50,21 +50,6 @@ export function formatRecurrenceRule(
 		typeStr = locale === "it" ? "Settimanale" : "Weekly"
 	} else if (rule.type === "daily") {
 		typeStr = locale === "it" ? "Giornaliera" : "Daily"
-	} else if (rule.type === "monthly") {
-		typeStr = locale === "it" ? "Mensile" : "Monthly"
-	}
-
-	// Format monthly-specific options
-	if (rule.type === "monthly") {
-		if (rule.dayOfMonth) {
-			if (rule.dayOfMonth === -1) {
-				const lastDay = locale === "it" ? "ultimo giorno" : "last day"
-				return `${typeStr} - ${lastDay} del mese (${days})`
-			}
-			return `${typeStr} - Giorno ${rule.dayOfMonth} (${days})`
-		} else if (rule.byWeekday) {
-			return `${typeStr} - ${rule.byWeekday} (${days})`
-		}
 	}
 
 	// Format until date
@@ -104,8 +89,6 @@ export function formatRecurrenceRuleShort(
 		typeStr = locale === "it" ? "Sett." : "Wk"
 	} else if (rule.type === "daily") {
 		typeStr = locale === "it" ? "Giorn." : "Day"
-	} else if (rule.type === "monthly") {
-		typeStr = locale === "it" ? "Mens." : "Mo"
 	}
 
 	return `${typeStr} ${days}`

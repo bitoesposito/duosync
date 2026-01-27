@@ -15,10 +15,8 @@ export interface Interval {
 }
 
 export interface RecurrenceRule {
-	type: "daily" | "weekly" | "monthly"
+	type: "daily" | "weekly"
 	daysOfWeek?: number[] // 1-7 (Monday=1, Sunday=7)
-	dayOfMonth?: number | "last" | -1 // For monthly: day of month or "last" or -1
-	byWeekday?: string // e.g., "first-monday", "last-friday"
 	until?: string | Date // ISO date string or Date object
 }
 

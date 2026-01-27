@@ -84,8 +84,8 @@ export const busyIntervals = pgTable("busy_intervals", {
 }, (table) => ({
 	// CHECK constraint: end_ts > start_ts
 	endAfterStart: check("end_after_start", sql`${table.endTs} > ${table.startTs}`),
-	// CHECK constraint: max 7 days
-	maxDuration: check("max_duration", sql`${table.endTs} - ${table.startTs} <= INTERVAL '7 days'`),
+	// CHECK constraint: max 24 hours
+	maxDuration: check("max_duration", sql`${table.endTs} - ${table.startTs} <= INTERVAL '24 hours'`),
 	// Indexes for performance
 	rangeIdx: index("busy_intervals_range_idx").on(table.startTs, table.endTs),
 	userIdIdx: index("busy_intervals_user_id_idx").on(table.userId),

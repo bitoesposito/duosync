@@ -144,10 +144,19 @@
 		"dashboard": {
 			"title": "Dashboard",
 			"welcome": "Benvenuto, {name}!",
+			"greeting": "Ciao, {name}!",
+			"greetingFallback": "lì",
+			"subtitle": "Gestisci il tuo calendario e sincronizza con gli amici",
 			"accountInformation": "Informazioni account",
+			"accountMenu": "Menu account",
 			"name": "Nome",
 			"email": "Email",
 			"userId": "ID utente",
+			"language": "Lingua",
+			"languages": {
+				"italian": "Italiano",
+				"english": "English"
+			},
 			"features": "Funzionalità",
 			"featuresDescription": "Le funzionalità principali saranno disponibili qui.",
 			"loading": "Caricamento..."
@@ -166,14 +175,32 @@
 		"busy": "Occupato",
 		"other": "Altro"
 	},
+	"availability": {
+		"title": "Disponibilità",
+		"loading": "Caricamento disponibilità...",
+		"personalTimeline": "La tua disponibilità",
+		"sharedTimeline": "Tempo disponibile condiviso",
+		"legendAvailable": "Disponibile",
+		"legendBusy": "Occupato",
+		"legendSleep": "Sonno",
+		"noData": "Nessun dato inserito",
+		"noOverlap": "Nessuna sovrapposizione trovata",
+		"slot": "slot",
+		"slots": "slot",
+		"intervalsList": "Lista impegni",
+		"noSleepSet": "Nessun orario di sonno impostato"
+	},
 	"intervals": {
 		"title": "Intervalli",
+		"singular": "intervallo",
+		"plural": "intervalli",
 		"create": {
 			"title": "Crea intervallo",
 			"start": "Inizio",
 			"end": "Fine",
 			"category": "Categoria",
 			"description": "Descrizione",
+			"descriptionPlaceholder": "Aggiungi descrizione...",
 			"recurrence": "Ricorrenza",
 			"submit": "Crea"
 		},
@@ -195,7 +222,10 @@
 			"none": "Nessuna",
 			"daily": "Giornaliera",
 			"weekly": "Settimanale",
-			"monthly": "Mensile",
+			"title": "Ricorrenza",
+			"weekdays": "Feriali",
+			"weekend": "Festivi",
+			"all": "Tutti",
 			"daysOfWeek": {
 				"monday": "Lunedì",
 				"tuesday": "Martedì",
@@ -205,8 +235,9 @@
 				"saturday": "Sabato",
 				"sunday": "Domenica"
 			},
-			"until": "Fino a",
-			"infinite": "Infinito"
+			"until": "Termina il",
+			"infinite": "Infinito",
+			"removeUntil": "Rimuovi data di fine"
 		}
 	},
 	"connections": {
@@ -245,7 +276,30 @@
 		"invalidDate": "Data non valida",
 		"invalidTime": "Orario non valido",
 		"endBeforeStart": "La fine deve essere dopo l'inizio",
-		"maxDuration": "La durata massima è di 7 giorni",
-		"invalidRecurrence": "Regola di ricorrenza non valida"
+		"maxDuration": "La durata massima è di 24 ore",
+		"invalidRecurrence": "Regola di ricorrenza non valida",
+		"overlapDetected": "Sovrapposizione rilevata"
+	},
+	"form": {
+		"addInterval": "Aggiungi intervallo",
+		"date": "Data",
+		"start": "Inizio",
+		"end": "Fine",
+		"duration": "Durata",
+		"endTime": "Fine",
+		"hours": "Ore",
+		"minutes": "Minuti",
+		"quickPresets": "Preset Rapidi",
+		"endOfDay": "Fine giornata",
+		"addToList": "Aggiungi alla lista",
+		"confirmSave": "Conferma e salva",
+		"confirmAll": "Conferma tutto",
+		"saving": "Salvataggio...",
+		"intervalsSaved": "Intervalli salvati",
+		"reviewList": "Rivedi lista",
+		"loginRequired": "Login richiesto",
+		"selectRecurrenceType": "Seleziona tipo di ricorrenza",
+		"selectAtLeastOneDay": "Seleziona almeno un giorno",
+		"untilDateMustBeFuture": "La data di fine deve essere nel futuro"
 	}
 }
