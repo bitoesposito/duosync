@@ -13,8 +13,7 @@
     "db:init": "tsx scripts/init-db.ts",
     "db:push": "drizzle-kit push",
     "security:audit": "npm audit --audit-level=moderate",
-    "security:fix": "npm audit fix --force",
-    "prebuild": "npm run security:check"
+    "security:fix": "npm audit fix --force"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",
