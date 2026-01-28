@@ -22,7 +22,7 @@ services:
 
   app:
     build:
-      context: ..
+      context: .
       dockerfile: docker/Dockerfile.prod
       args:
         NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-https://duosync.vitoesposito.it}
