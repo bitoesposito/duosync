@@ -3,6 +3,9 @@ set -e
 
 echo "Starting DuoSync production container..."
 
+# Add node_modules/.bin to PATH so we can execute tsx and other binaries
+export PATH="/app/node_modules/.bin:$PATH"
+
 # Wait for database to be ready
 echo "Waiting for database connection..."
 tsx scripts/wait-for-db.ts

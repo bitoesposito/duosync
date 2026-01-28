@@ -57,23 +57,18 @@ RUN npm run build
 FROM node:20-alpine AS runtime-deps
 WORKDIR /app
 
-# Copy only the runtime dependencies we need from builder
-# These are already installed and audited in the builder stage
-COPY --from=builder /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
-COPY --from=builder /app/node_modules/pg ./node_modules/pg
-
-# Copy transitive dependencies for pg (these are required for pg to work)
-# We copy the entire pg dependency tree to ensure compatibility
-COPY --from=builder /app/node_modules/pg-pool ./node_modules/pg-pool
-COPY --from=builder /app/node_modules/postgres-array ./node_modules/postgres-array
-COPY --from=builder /app/node_modules/postgres-bytea ./node_modules/postgres-bytea
-COPY --from=builder /app/node_modules/postgres-date ./node_modules/postgres-date
-COPY --from=builder /app/node_modules/postgres-interval ./node_modules/postgres-interval
-COPY --from=builder /app/node_modules/split2 ./node_modules/split2
-COPY --from=builder /app/node_modules/readable-stream ./node_modules/readable-stream
-
-# Copy package.json for dependency resolution (needed for module resolution)
+# Copy package.json and package-lock.json for dependency resolution
 COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/package-lock.json ./package-lock.json
+
+# Copy all dependencies from builder (including devDependencies like tsx)
+# This is safe because they were installed and audited in the builder stage
+# We need all dependencies because:
+# 1. Next.js standalone includes minimal deps, but we need more for TypeScript scripts
+# 2. Scripts like wait-for-db.ts and init-db.ts need tsx (a devDependency) and its dependencies
+# 3. Database operations need drizzle-orm, pg, and their transitive dependencies
+# Note: We copy all deps (not just production) because tsx is needed for runtime scripts
+COPY --from=builder /app/node_modules ./node_modules
 
 # ============================================
 # Stage 4: Runner
@@ -83,16 +78,20 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Security: Copy tsx from builder stage to avoid downloading from registry at runtime
-COPY --from=builder /app/node_modules/.bin/tsx /usr/local/bin/tsx
-COPY --from=builder /app/node_modules/tsx /usr/local/lib/node_modules/tsx
-
-# Copy Next.js standalone build (includes server.js and minimal dependencies)
+# Copy Next.js standalone build first (includes server.js and minimal dependencies)
 COPY --from=builder /app/.next/standalone ./
 
-# SECURITY FIX: Copy runtime dependencies from dedicated stage
-# This ensures we use the exact same versions that were audited during build
-# and avoids installing packages at runtime (major security risk)
+# Copy package files for dependency resolution
+COPY --from=runtime-deps /app/package.json ./package.json
+COPY --from=runtime-deps /app/package-lock.json ./package-lock.json
+
+# Copy all dependencies from builder (overwrites standalone's minimal node_modules)
+# This ensures we have all dependencies needed for:
+# 1. Next.js server (from standalone, but we overwrite with full deps for compatibility)
+# 2. TypeScript scripts (tsx, typescript, and their dependencies)
+# 3. Database operations (drizzle-orm, pg, and transitive dependencies)
+# Note: This includes devDependencies like tsx which are needed at runtime for scripts
+# This is safe because all dependencies were audited in the builder stage
 COPY --from=runtime-deps /app/node_modules ./node_modules
 
 # Copy static files
