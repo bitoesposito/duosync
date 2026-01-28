@@ -35,7 +35,8 @@ README.md
 docs/
 
 # Docker
-docker/
+# Note: docker/ directory is needed for Dockerfile, so we don't exclude it
+# Only exclude docker-compose files from build context
 .dockerignore
 docker-compose*.yml
 
