@@ -3,6 +3,7 @@ import en from "./en.json";
 import it from "./it.json";
 
 export type Locale = "en" | "it";
+export const SUPPORTED_LOCALES: Locale[] = ["en", "it"];
 type Values = Record<string, string | number>;
 
 const dictionaries: Record<Locale, unknown> = { en, it };

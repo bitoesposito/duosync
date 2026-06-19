@@ -1,6 +1,8 @@
 {
   "common": {
     "appName": "DuoSync",
+    "cancel": "Annulla",
+    "save": "Salva",
     "categories": { "sleep": "Sonno", "other": "Occupato" },
     "days": {
       "1": "Lunedì",
@@ -10,68 +12,62 @@
       "5": "Venerdì",
       "6": "Sabato",
       "7": "Domenica"
-    },
-    "daysShort": {
-      "1": "Lun",
-      "2": "Mar",
-      "3": "Mer",
-      "4": "Gio",
-      "5": "Ven",
-      "6": "Sab",
-      "7": "Dom"
     }
   },
   "header": {
-    "user": "Utente",
-    "language": "Lingua",
-    "theme": "Tema",
-    "themeLight": "Chiaro",
-    "themeDark": "Scuro",
-    "themeSystem": "Sistema"
+    "appName": "DuoSync",
+    "selectUserFallback": "Seleziona utente",
+    "availableUsers": "Utenti disponibili",
+    "language": "Lingua"
   },
   "dashboard": {
     "greeting": "Ciao, {{name}}",
-    "subtitle": "Aggiungi i tuoi impegni per vedere quando siete tutti liberi."
+    "greetingFallback": "amico",
+    "subtitle": "Inserisci i tuoi impegni per verificare la disponibilità."
   },
-  "timeline": {
-    "personal": "La tua giornata",
-    "shared": "Disponibilità condivisa",
-    "legend": {
-      "sleep": "Sonno",
-      "other": "Occupato",
-      "available": "Qualcuno occupato",
-      "match": "Tutti liberi"
-    },
-    "empty": "Ancora nessun utente."
+  "availability": {
+    "loading": "Caricamento disponibilità…",
+    "title": "Disponibilità",
+    "personalTimeline": "La tua giornata",
+    "sharedTimeline": "Disponibilità condivisa",
+    "legendAvailable": "Disponibile",
+    "legendBusy": "Occupato",
+    "legendSleep": "Sonno",
+    "freeSlots": "slot liberi",
+    "noFreeTime": "Nessun orario in cui siete tutti liberi"
   },
   "form": {
-    "title": "Aggiungi impegno",
-    "start": "Inizio",
-    "end": "Fine",
-    "category": "Categoria",
-    "description": "Descrizione",
+    "title": "Nuovo impegno",
+    "categoryLabel": "Categoria",
+    "categoryOther": "Altro",
+    "categorySleep": "Sonno",
+    "descriptionLabel": "Descrizione",
     "descriptionPlaceholder": "Nota opzionale",
-    "repeats": "Si ripete ogni settimana",
-    "selectDays": "Ripeti il",
-    "submit": "Aggiungi",
-    "save": "Salva modifiche",
-    "saving": "Salvataggio…",
-    "cancel": "Annulla",
-    "suggestion": "Prossimo slot libero alle {{time}}",
-    "useSuggestion": "Usa {{time}}"
+    "startLabel": "Ora di inizio",
+    "endLabel": "Ora di fine",
+    "modeEndTime": "Ora di fine",
+    "modeDuration": "Durata",
+    "durationHoursLabel": "Ore",
+    "durationMinutesLabel": "Minuti",
+    "repeatLabel": "Ricorrenza",
+    "quickSelect": { "allWeek": "Tutta la settimana", "weekend": "Weekend" },
+    "addButtonDefault": "Aggiungi impegno",
+    "addButtonSyncing": "Salvataggio…",
+    "userRequired": "Seleziona un utente per aggiungere impegni.",
+    "nextSlotHint": "Prossimo slot libero alle {{time}}",
+    "editTitle": "Modifica impegno",
+    "editDescription": "Aggiorna orario, categoria, descrizione o ricorrenza.",
+    "validation": {
+      "invalidFormat": "Formato orario non valido.",
+      "endBeforeStart": "L'ora di fine deve essere dopo l'inizio.",
+      "overlap": "Si sovrappone a un impegno esistente."
+    }
   },
   "list": {
-    "title": "Giornata di {{name}}",
+    "title": "Oggi",
+    "loading": "Caricamento impegni…",
     "empty": "Nessun impegno oggi.",
-    "recurring": "settimanale",
-    "delete": "Elimina",
-    "edit": "Modifica"
-  },
-  "errors": {
-    "invalid-format": "Orario non valido.",
-    "end-before-start": "La fine deve essere dopo l'inizio.",
-    "overlap": "Si sovrappone a un impegno esistente.",
-    "no-days": "Scegli almeno un giorno.",
-    "generic": "Qualcosa è andato storto."
+    "editAriaLabel": "Modifica impegno",
+    "removeAriaLabel": "Rimuovi impegno"
   }
 }

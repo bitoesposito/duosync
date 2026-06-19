@@ -5,6 +5,11 @@
 
 import type { Appointment, DayId } from "./types";
 
+/** Sort weekday ids ascending (Monday → Sunday) for stable display/storage. */
+export function sortRepeatDays(days: DayId[]): DayId[] {
+  return [...days].sort((a, b) => a - b);
+}
+
 /** Weekday of a "YYYY-MM-DD" date as 1–7 (1 = Monday … 7 = Sunday). */
 export function dayOfWeek(dateStr: string): DayId {
   const date = new Date(dateStr + "T00:00:00");
