@@ -7,8 +7,7 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "verbatimModuleSyntax": true,
-    "allowImportingTsExtensions": true
+    "verbatimModuleSyntax": true
   },
   "include": ["**/*.ts", "../db/**/*.ts", "../shared/**/*.ts"]
 }
