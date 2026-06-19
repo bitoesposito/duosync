@@ -42,6 +42,14 @@ export interface UserProfile {
   name: string;
 }
 
+/**
+ * Appointment as returned by the batch API. An expanded recurring instance also
+ * carries its source `templateId` so it can be edited/deleted inline.
+ */
+export interface DayAppointment extends Appointment {
+  templateId?: string;
+}
+
 export type ValidationReason =
   | "invalid-format"
   | "end-before-start"

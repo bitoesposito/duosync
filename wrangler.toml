@@ -1,0 +1,12 @@
+name = "duosync"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "dist"
+
+# D1 binding available to Pages Functions as `env.DB`.
+# For local dev the id is unused; replace with the real id from
+# `wrangler d1 create duosync` before deploying.
+[[d1_databases]]
+binding = "DB"
+database_name = "duosync"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "db/migrations"
