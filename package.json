@@ -11,7 +11,11 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "wrangler d1 migrations apply duosync --local",
+    "db:seed": "wrangler d1 execute duosync --local --file db/seed.sql",
+    "cf:dev": "wrangler pages dev dist"
   },
   "dependencies": {
     "@fontsource-variable/ibm-plex-sans": "^5.2.8",

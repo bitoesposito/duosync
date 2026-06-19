@@ -1,0 +1,77 @@
+{
+  "common": {
+    "appName": "DuoSync",
+    "categories": { "sleep": "Sleep", "other": "Busy" },
+    "days": {
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday",
+      "7": "Sunday"
+    },
+    "daysShort": {
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat",
+      "7": "Sun"
+    }
+  },
+  "header": {
+    "user": "User",
+    "language": "Language",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System"
+  },
+  "dashboard": {
+    "greeting": "Hi, {{name}}",
+    "subtitle": "Add your appointments to see when everyone is free together."
+  },
+  "timeline": {
+    "personal": "Your day",
+    "shared": "Shared availability",
+    "legend": {
+      "sleep": "Sleep",
+      "other": "Busy",
+      "available": "Someone busy",
+      "match": "Everyone free"
+    },
+    "empty": "No users yet."
+  },
+  "form": {
+    "title": "Add appointment",
+    "start": "Start",
+    "end": "End",
+    "category": "Category",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional note",
+    "repeats": "Repeats weekly",
+    "selectDays": "Repeat on",
+    "submit": "Add",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "suggestion": "Next free slot at {{time}}",
+    "useSuggestion": "Use {{time}}"
+  },
+  "list": {
+    "title": "{{name}}'s day",
+    "empty": "No appointments today.",
+    "recurring": "weekly",
+    "delete": "Delete",
+    "edit": "Edit"
+  },
+  "errors": {
+    "invalid-format": "Invalid time.",
+    "end-before-start": "End must be after start.",
+    "overlap": "Overlaps an existing appointment.",
+    "no-days": "Pick at least one day.",
+    "generic": "Something went wrong."
+  }
+}

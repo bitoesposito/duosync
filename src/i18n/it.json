@@ -1,0 +1,77 @@
+{
+  "common": {
+    "appName": "DuoSync",
+    "categories": { "sleep": "Sonno", "other": "Occupato" },
+    "days": {
+      "1": "Lunedì",
+      "2": "Martedì",
+      "3": "Mercoledì",
+      "4": "Giovedì",
+      "5": "Venerdì",
+      "6": "Sabato",
+      "7": "Domenica"
+    },
+    "daysShort": {
+      "1": "Lun",
+      "2": "Mar",
+      "3": "Mer",
+      "4": "Gio",
+      "5": "Ven",
+      "6": "Sab",
+      "7": "Dom"
+    }
+  },
+  "header": {
+    "user": "Utente",
+    "language": "Lingua",
+    "theme": "Tema",
+    "themeLight": "Chiaro",
+    "themeDark": "Scuro",
+    "themeSystem": "Sistema"
+  },
+  "dashboard": {
+    "greeting": "Ciao, {{name}}",
+    "subtitle": "Aggiungi i tuoi impegni per vedere quando siete tutti liberi."
+  },
+  "timeline": {
+    "personal": "La tua giornata",
+    "shared": "Disponibilità condivisa",
+    "legend": {
+      "sleep": "Sonno",
+      "other": "Occupato",
+      "available": "Qualcuno occupato",
+      "match": "Tutti liberi"
+    },
+    "empty": "Ancora nessun utente."
+  },
+  "form": {
+    "title": "Aggiungi impegno",
+    "start": "Inizio",
+    "end": "Fine",
+    "category": "Categoria",
+    "description": "Descrizione",
+    "descriptionPlaceholder": "Nota opzionale",
+    "repeats": "Si ripete ogni settimana",
+    "selectDays": "Ripeti il",
+    "submit": "Aggiungi",
+    "save": "Salva modifiche",
+    "saving": "Salvataggio…",
+    "cancel": "Annulla",
+    "suggestion": "Prossimo slot libero alle {{time}}",
+    "useSuggestion": "Usa {{time}}"
+  },
+  "list": {
+    "title": "Giornata di {{name}}",
+    "empty": "Nessun impegno oggi.",
+    "recurring": "settimanale",
+    "delete": "Elimina",
+    "edit": "Modifica"
+  },
+  "errors": {
+    "invalid-format": "Orario non valido.",
+    "end-before-start": "La fine deve essere dopo l'inizio.",
+    "overlap": "Si sovrappone a un impegno esistente.",
+    "no-days": "Scegli almeno un giorno.",
+    "generic": "Qualcosa è andato storto."
+  }
+}
