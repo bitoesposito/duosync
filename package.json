@@ -2,6 +2,7 @@
   "name": "vite-app",
   "private": true,
   "version": "0.0.1",
+  "packageManager": "pnpm@11.7.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,7 +16,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply duosync --local",
     "db:seed": "wrangler d1 execute duosync --local --file db/seed.sql",
-    "cf:dev": "wrangler pages dev dist"
+    "db:migrate:remote": "wrangler d1 migrations apply duosync --remote",
+    "cf:dev": "wrangler pages dev dist",
+    "cf:deploy": "wrangler pages deploy dist --project-name duosync --branch main --commit-dirty=true"
   },
   "dependencies": {
     "@fontsource-variable/ibm-plex-sans": "^5.2.8",
