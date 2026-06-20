@@ -12,4 +12,12 @@ export default defineConfig({
       "@shared": path.resolve(__dirname, "./shared"),
     },
   },
+  // `pnpm dev` runs Vite (this server, with HMR) + `wrangler dev` (the Worker + a
+  // local D1 copy) on :8787 in parallel. Proxy the API to the local Worker so the
+  // whole app works locally before pushing.
+  server: {
+    proxy: {
+      "/api": { target: "http://localhost:8787", changeOrigin: true },
+    },
+  },
 })

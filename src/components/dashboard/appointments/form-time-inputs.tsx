@@ -4,8 +4,16 @@ import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { findNextAvailableSlot, isValidTime, minutesToTime, normalizeEndTime, timeToMinutes } from "@shared";
+import {
+  DAY_MINUTES,
+  findNextAvailableSlot,
+  isValidTime,
+  minutesToTime,
+  normalizeEndTime,
+  timeToMinutes,
+} from "@shared";
 import type { Appointment, DayId } from "@shared";
 
 type TimeInputsProps = {
@@ -22,8 +30,8 @@ type TimeInputsProps = {
   excludeId?: string;
 };
 
-const HOURS = Array.from({ length: 13 }, (_, i) => i); // 0–12
-const MINUTES = [0, 15, 30, 45];
+const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0–23
+const MINUTES = [0, 5, 10, 15, 20, 30, 45];
 const inputClass = "bg-transparent border-border rounded-none h-10 text-sm";
 
 /** Start time + (end time | duration) with inline validation via the shared domain. */
@@ -43,6 +51,15 @@ export function TimeInputs({
   const [mode, setMode] = useState<"endTime" | "duration">("endTime");
   const [durHours, setDurHours] = useState(1);
   const [durMinutes, setDurMinutes] = useState(0);
+
+  // In duration mode the end time is derived from start + duration.
+  useEffect(() => {
+    if (mode !== "duration" || !startTime || !isValidTime(startTime)) return;
+    onEndTimeChange(
+      minutesToTime(Math.min(timeToMinutes(startTime) + durHours * 60 + durMinutes, DAY_MINUTES)),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, startTime, durHours, durMinutes]);
 
   const errorKey = useMemo<"invalidFormat" | "endBeforeStart" | "overlap" | null>(() => {
     if (!startTime || !endTime) return null;
@@ -64,10 +81,7 @@ export function TimeInputs({
   }, [startTime, endTime, isRepeating, existingAppointments, excludeId]);
 
   const isValid =
-    !!startTime &&
-    !!endTime &&
-    errorKey === null &&
-    (!isRepeating || repeatDays.length > 0);
+    !!startTime && !!endTime && errorKey === null && (!isRepeating || repeatDays.length > 0);
 
   useEffect(() => {
     onValidationChange?.(isValid);
@@ -80,11 +94,6 @@ export function TimeInputs({
         : null,
     [errorKey, startTime, existingAppointments, excludeId],
   );
-
-  const applyDuration = (h: number, m: number) => {
-    if (!startTime || !isValidTime(startTime)) return;
-    onEndTimeChange(minutesToTime(Math.min(timeToMinutes(startTime) + h * 60 + m, 23 * 60 + 59)));
-  };
 
   const hasStartError = errorKey === "invalidFormat";
   const hasEndError = errorKey === "endBeforeStart" || errorKey === "overlap";
@@ -152,45 +161,58 @@ export function TimeInputs({
           />
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-2">
-            <Label className="text-muted-foreground text-xs font-medium uppercase">
-              {t("form.durationHoursLabel")}
-            </Label>
-            <select
-              value={durHours}
-              onChange={(e) => {
-                const h = Number(e.target.value);
-                setDurHours(h);
-                applyDuration(h, durMinutes);
-              }}
-              disabled={disabled}
-              className={inputClass}
-            >
-              {HOURS.map((h) => (
-                <option key={h} value={h}>{h}h</option>
-              ))}
-            </select>
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-2">
+              <Label className="text-muted-foreground text-xs font-medium uppercase">
+                {t("form.durationHoursLabel")}
+              </Label>
+              <Select
+                value={String(durHours)}
+                onValueChange={(v) => setDurHours(Number(v))}
+                disabled={disabled}
+              >
+                <SelectTrigger className="rounded-none">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-none border-border max-h-60">
+                  {HOURS.map((h) => (
+                    <SelectItem key={h} value={String(h)} className="rounded-none">
+                      {h}h
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label className="text-muted-foreground text-xs font-medium uppercase">
+                {t("form.durationMinutesLabel")}
+              </Label>
+              <Select
+                value={String(durMinutes)}
+                onValueChange={(v) => setDurMinutes(Number(v))}
+                disabled={disabled}
+              >
+                <SelectTrigger className="rounded-none">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-none border-border max-h-60">
+                  {MINUTES.map((m) => (
+                    <SelectItem key={m} value={String(m)} className="rounded-none">
+                      {m}m
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <Label className="text-muted-foreground text-xs font-medium uppercase">
-              {t("form.durationMinutesLabel")}
-            </Label>
-            <select
-              value={durMinutes}
-              onChange={(e) => {
-                const m = Number(e.target.value);
-                setDurMinutes(m);
-                applyDuration(durHours, m);
-              }}
-              disabled={disabled}
-              className={inputClass}
-            >
-              {MINUTES.map((m) => (
-                <option key={m} value={m}>{m}m</option>
-              ))}
-            </select>
-          </div>
+
+          {endTime && !hasEndError && (
+            <div className="flex items-center gap-2 px-1">
+              <span className="text-xs text-muted-foreground">{t("form.endLabel")}:</span>
+              <span className="text-sm font-semibold text-foreground tabular-nums">{endTime}</span>
+            </div>
+          )}
         </div>
       )}
 
